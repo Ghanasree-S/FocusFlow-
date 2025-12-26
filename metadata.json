@@ -1,0 +1,8 @@
+{
+  "name": "FocusFlow",
+  "description": "Intelligent productivity automation app with ML-based forecasting and time-series analysis.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

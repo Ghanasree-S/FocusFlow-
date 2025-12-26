@@ -1,0 +1,161 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+*/
+import React from 'react';
+import { Task } from '../types';
+import { TIME_SERIES_DATA } from '../mockData';
+import { 
+  CheckCircle2, 
+  Clock, 
+  AlertTriangle, 
+  ArrowUpRight, 
+  Plus, 
+  Target 
+} from 'lucide-react';
+
+interface DashboardProps {
+  tasks: Task[];
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
+  const completedTasks = tasks.filter(t => t.completed).length;
+  const pendingTasks = tasks.length - completedTasks;
+  const focusScore = 84;
+
+  return (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard 
+          label="Tasks Completed" 
+          value={completedTasks.toString()} 
+          subValue={`of ${tasks.length} total`} 
+          icon={<CheckCircle2 className="text-emerald-500" />}
+          color="emerald"
+        />
+        <StatCard 
+          label="Focus Score" 
+          value={`${focusScore}%`} 
+          subValue="+4% from yesterday" 
+          icon={<Target className="text-indigo-500" />}
+          color="indigo"
+          trend="up"
+        />
+        <StatCard 
+          label="Pending Deadline" 
+          value={pendingTasks.toString()} 
+          subValue="2 due within 24h" 
+          icon={<Clock className="text-amber-500" />}
+          color="amber"
+        />
+        <StatCard 
+          label="Distraction Spikes" 
+          value="3" 
+          subValue="Lower than average" 
+          icon={<AlertTriangle className="text-rose-500" />}
+          color="rose"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Activity Chart */}
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-display font-bold text-slate-900 dark:text-white">Productivity Trends</h3>
+            <div className="flex items-center gap-4 text-xs font-medium">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                <span className="text-slate-500">Productive</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700"></div>
+                <span className="text-slate-500">Distracted</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="h-64 relative flex items-end justify-between gap-1 mt-4">
+            {TIME_SERIES_DATA.map((d, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
+                <div className="w-full flex flex-col-reverse gap-0.5 max-w-[24px]">
+                  <div 
+                    className="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm transition-all duration-700 delay-100" 
+                    style={{ height: `${d.distracted * 1.5}px` }}
+                  ></div>
+                  <div 
+                    className="w-full bg-indigo-500 rounded-t-sm transition-all duration-700 shadow-[0_0_15px_rgba(99,102,241,0.2)]" 
+                    style={{ height: `${d.productive * 1.5}px` }}
+                  ></div>
+                </div>
+                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter">{d.time}</span>
+                
+                {/* Tooltip */}
+                <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] p-2 rounded shadow-xl z-20 pointer-events-none min-w-[100px]">
+                  <p className="font-bold border-b border-white/10 mb-1 pb-1">{d.time}</p>
+                  <p className="flex justify-between"><span>Focus:</span> <span className="text-indigo-400">{d.productive}%</span></p>
+                  <p className="flex justify-between"><span>Noise:</span> <span className="text-slate-400">{d.distracted}%</span></p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Tasks */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 flex flex-col">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-display font-bold text-slate-900 dark:text-white">Active Tasks</h3>
+            <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-indigo-600 transition-colors">
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+            {tasks.filter(t => !t.completed).slice(0, 4).map(task => (
+              <div key={task.id} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer">
+                <div className="flex justify-between items-start mb-2">
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                    task.priority === 'High' ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/20' : 'bg-slate-200 text-slate-600 dark:bg-slate-700'
+                  }`}>
+                    {task.priority}
+                  </span>
+                  <span className="text-[10px] text-slate-400">{task.deadline}</span>
+                </div>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2 truncate">{task.title}</p>
+                <div className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-indigo-500 transition-all duration-1000" 
+                    style={{ width: `${task.progress}%` }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button className="mt-4 w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all">
+            Start Focus Session
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const StatCard = ({ label, value, subValue, icon, color, trend }: any) => (
+  <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:scale-[1.02] transition-transform">
+    <div className={`absolute -right-4 -top-4 w-24 h-24 bg-${color}-500/5 rounded-full blur-2xl group-hover:bg-${color}-500/10 transition-colors`}></div>
+    <div className="flex justify-between items-start mb-4 relative z-10">
+      <div className={`p-2.5 rounded-xl bg-${color}-50 dark:bg-${color}-500/10`}>
+        {icon}
+      </div>
+      {trend === 'up' && (
+        <span className="flex items-center text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-lg">
+          <ArrowUpRight className="w-3 h-3 mr-0.5" /> 12%
+        </span>
+      )}
+    </div>
+    <h4 className="text-2xl font-display font-bold text-slate-900 dark:text-white mb-1">{value}</h4>
+    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+    <p className="text-[10px] text-slate-400">{subValue}</p>
+  </div>
+);
+
+export default Dashboard;
