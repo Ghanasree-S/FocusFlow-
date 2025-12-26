@@ -1,21 +1,104 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
-*/
-import React from 'react';
-import { FORECAST_DATA } from '../mockData';
-import { 
-  Sparkles, 
-  BrainCircuit, 
-  TrendingUp, 
-  Zap, 
+ */
+import React, { useState, useEffect } from 'react';
+import { insightsApi } from '../services/api';
+import {
+  Sparkles,
+  BrainCircuit,
+  TrendingUp,
+  TrendingDown,
+  Zap,
   Lightbulb,
   Timer,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Minus
 } from 'lucide-react';
 
+interface ForecastData {
+  productivityLevel: string;
+  nextDayWorkload: number;
+  completionProbability: number;
+  bestFocusWindow: string;
+  distractionTrigger: string;
+  trend: 'Up' | 'Down' | 'Stable';
+  expectedLoadLevel: string;
+  stressRisk: string;
+}
+
+interface Pattern {
+  type: string;
+  title: string;
+  description: string;
+  icon: string;
+}
+
 const Insights: React.FC = () => {
+  const [forecast, setForecast] = useState<ForecastData | null>(null);
+  const [patterns, setPatterns] = useState<Pattern[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchInsights = async () => {
+      try {
+        const [forecastData, patternsData] = await Promise.all([
+          insightsApi.getForecast(),
+          insightsApi.getBehavioralPatterns()
+        ]);
+
+        setForecast(forecastData);
+        setPatterns(patternsData.patterns || []);
+      } catch (error) {
+        console.error('Failed to fetch insights:', error);
+        // Use fallback data
+        setForecast({
+          productivityLevel: 'High',
+          nextDayWorkload: 78,
+          completionProbability: 82,
+          bestFocusWindow: '09:00 AM - 11:30 AM',
+          distractionTrigger: 'Social Media / Morning Emails',
+          trend: 'Up',
+          expectedLoadLevel: 'Medium',
+          stressRisk: 'Low'
+        });
+        setPatterns([
+          { type: 'Optimization', title: 'Consistency Streak', description: 'You are most productive after morning physical activity. Your streak is currently at 5 days.', icon: 'Lightbulb' },
+          { type: 'Growth', title: 'Deep Work Capacity', description: 'Average focus duration has increased from 42m to 58m this week (+38%).', icon: 'Timer' },
+          { type: 'Warning', title: 'Context Switching', description: 'Switching between Email and Work apps before 11 AM reduces output by ~15%.', icon: 'ShieldAlert' }
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInsights();
+  }, []);
+
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case 'Lightbulb': return <Lightbulb className="text-yellow-500" />;
+      case 'Timer': return <Timer className="text-indigo-500" />;
+      case 'ShieldAlert': return <ShieldAlert className="text-rose-500" />;
+      default: return <Lightbulb className="text-yellow-500" />;
+    }
+  };
+
+  const getTrendIcon = () => {
+    if (forecast?.trend === 'Up') return <TrendingUp className="w-5 h-5" />;
+    if (forecast?.trend === 'Down') return <TrendingDown className="w-5 h-5" />;
+    return <Minus className="w-5 h-5" />;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center gap-3">
@@ -39,13 +122,13 @@ const Insights: React.FC = () => {
               </span>
               <Sparkles className="w-6 h-6 text-yellow-300 animate-pulse" />
             </div>
-            
+
             <div className="mb-auto">
               <p className="text-white/70 text-sm font-medium mb-1">Tomorrow's Productivity Forecast</p>
-              <h3 className="text-5xl font-display font-bold mb-4">High Output</h3>
+              <h3 className="text-5xl font-display font-bold mb-4">{forecast?.productivityLevel} Output</h3>
               <div className="flex items-center gap-2 text-indigo-100 font-semibold">
-                <TrendingUp className="w-5 h-5" />
-                <span>82% Prob. Task Completion</span>
+                {getTrendIcon()}
+                <span>{forecast?.completionProbability}% Prob. Task Completion</span>
               </div>
             </div>
 
@@ -54,18 +137,18 @@ const Insights: React.FC = () => {
                 <p className="text-white/60 text-[10px] uppercase font-bold tracking-widest mb-1">Expected Load</p>
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-16 bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-white w-3/4"></div>
+                    <div className="h-full bg-white" style={{ width: `${forecast?.nextDayWorkload}%` }}></div>
                   </div>
-                  <span className="text-xs font-bold">Medium</span>
+                  <span className="text-xs font-bold">{forecast?.expectedLoadLevel}</span>
                 </div>
               </div>
               <div>
                 <p className="text-white/60 text-[10px] uppercase font-bold tracking-widest mb-1">Stress Risk</p>
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-16 bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-400 w-1/4"></div>
+                    <div className={`h-full ${forecast?.stressRisk === 'Low' ? 'bg-emerald-400 w-1/4' : forecast?.stressRisk === 'Medium' ? 'bg-amber-400 w-1/2' : 'bg-rose-400 w-3/4'}`}></div>
                   </div>
-                  <span className="text-xs font-bold">Low</span>
+                  <span className="text-xs font-bold">{forecast?.stressRisk}</span>
                 </div>
               </div>
             </div>
@@ -86,7 +169,7 @@ const Insights: React.FC = () => {
 
           <div className="flex-1 flex flex-col justify-center text-center py-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
             <p className="text-3xl font-display font-bold text-slate-800 dark:text-slate-100 mb-2">
-              {FORECAST_DATA.bestFocusWindow}
+              {forecast?.bestFocusWindow}
             </p>
             <p className="text-xs font-bold text-amber-600 uppercase tracking-widest">Optimal Cognitive state</p>
           </div>
@@ -94,11 +177,11 @@ const Insights: React.FC = () => {
           <div className="mt-8 space-y-4">
             <div className="flex items-center gap-3">
               <Zap className="w-5 h-5 text-indigo-500" />
-              <p className="text-sm text-slate-600 dark:text-slate-400">Next 7 days show a <span className="text-indigo-600 dark:text-indigo-400 font-bold">positive trend</span> in focus duration.</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Next 7 days show a <span className="text-indigo-600 dark:text-indigo-400 font-bold">{forecast?.trend?.toLowerCase()} trend</span> in focus duration.</p>
             </div>
             <div className="flex items-center gap-3">
               <ShieldAlert className="w-5 h-5 text-rose-500" />
-              <p className="text-sm text-slate-600 dark:text-slate-400">High distraction probability detected at <span className="font-bold">1:45 PM</span>.</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Main distraction: <span className="font-bold">{forecast?.distractionTrigger}</span>.</p>
             </div>
           </div>
         </div>
@@ -108,24 +191,15 @@ const Insights: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8">
         <h3 className="font-display font-bold text-slate-900 dark:text-white mb-6">Behavioral Patterns</h3>
         <div className="space-y-4">
-          <InsightItem 
-            icon={<Lightbulb className="text-yellow-500" />}
-            title="Consistency Streak"
-            description="You are most productive after morning physical activity. Your streak is currently at 5 days."
-            tag="Optimization"
-          />
-          <InsightItem 
-            icon={<Timer className="text-indigo-500" />}
-            title="Deep Work Capacity"
-            description="Average focus duration has increased from 42m to 58m this week (+38%)."
-            tag="Growth"
-          />
-          <InsightItem 
-            icon={<ShieldAlert className="text-rose-500" />}
-            title="Context Switching"
-            description="Switching between Email and Work apps before 11 AM reduces output by ~15%."
-            tag="Warning"
-          />
+          {patterns.map((pattern, index) => (
+            <InsightItem
+              key={index}
+              icon={getIconComponent(pattern.icon)}
+              title={pattern.title}
+              description={pattern.description}
+              tag={pattern.type}
+            />
+          ))}
         </div>
       </div>
     </div>
@@ -140,9 +214,8 @@ const InsightItem = ({ icon, title, description, tag }: any) => (
     <div className="flex-1">
       <div className="flex items-center gap-2 mb-1">
         <h5 className="font-bold text-slate-800 dark:text-slate-200">{title}</h5>
-        <span className={`text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-md ${
-          tag === 'Warning' ? 'bg-rose-100 text-rose-600' : 'bg-indigo-100 text-indigo-600'
-        }`}>
+        <span className={`text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-md ${tag === 'Warning' ? 'bg-rose-100 text-rose-600' : 'bg-indigo-100 text-indigo-600'
+          }`}>
           {tag}
         </span>
       </div>

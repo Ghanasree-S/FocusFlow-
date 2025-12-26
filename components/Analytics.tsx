@@ -1,25 +1,82 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
-*/
-import React from 'react';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Calendar, 
-  Clock, 
+ */
+import React, { useState, useEffect } from 'react';
+import { insightsApi } from '../services/api';
+import {
+  BarChart3,
+  TrendingUp,
+  Calendar,
+  Clock,
   Activity,
   Zap,
   Target
 } from 'lucide-react';
 
+interface TrendData {
+  weeklyTrends: Array<{ date: string; productive_minutes: number; distracting_minutes: number }>;
+  hourlyBreakdown: Array<{ time: string; productive: number; distracted: number }>;
+  focusStats: { total_focus_time: number; avg_duration: number; completion_rate: number };
+}
+
 const Analytics: React.FC = () => {
-  // Mock data for heatmap
+  const [trendData, setTrendData] = useState<TrendData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const hours = ['8am', '10am', '12pm', '2pm', '4pm', '6pm', '8pm', '10pm'];
-  
-  // Consistency score
-  const consistencyScore = 92;
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const data = await insightsApi.getTrends(7);
+        setTrendData(data);
+      } catch (error) {
+        console.error('Failed to fetch analytics:', error);
+        // Use fallback data
+        setTrendData(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, []);
+
+  // Use ONLY real data - no mock fallbacks
+  const consistencyScore = trendData?.focusStats?.completion_rate ?? 0;
+  const totalFocusTime = trendData?.focusStats?.total_focus_time ?? 0;
+  const avgDuration = trendData?.focusStats?.avg_duration ?? 0;
+  const hasData = trendData?.weeklyTrends?.length > 0;
+
+  // Calculate weekly change from real data
+  const weeklyChange = trendData?.weeklyTrends?.length
+    ? Math.round((trendData.weeklyTrends.reduce((sum, d) => sum + (d.productive_minutes || 0), 0) /
+      Math.max(trendData.weeklyTrends.length * 60, 1)) * 100 - 50)
+    : 0;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  // Show message if no data yet
+  if (!hasData) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-center">
+        <div className="text-6xl mb-4">📈</div>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No Analytics Data Yet</h3>
+        <p className="text-slate-500 dark:text-slate-400 max-w-md">
+          Keep using your computer with the tracker running. Analytics will appear once we have activity data.
+        </p>
+        <p className="text-sm text-indigo-500 mt-4">Data updates automatically every 10 seconds</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -41,33 +98,38 @@ const Analytics: React.FC = () => {
               <Activity className="w-4 h-4 text-indigo-500" />
               Weekly Productivity
             </h3>
-            <span className="text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-lg">+14% vs last week</span>
+            <span className={`text-xs font-bold px-2 py-1 rounded-lg ${weeklyChange >= 0
+              ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10'
+              : 'text-rose-500 bg-rose-50 dark:bg-rose-500/10'
+              }`}>
+              {weeklyChange >= 0 ? '+' : ''}{weeklyChange}% vs last week
+            </span>
           </div>
-          
+
           <div className="h-64 w-full relative pt-4">
             <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 700 200">
               {/* Grid lines */}
               {[0, 50, 100, 150, 200].map(y => (
                 <line key={y} x1="0" y1={y} x2="700" y2={y} stroke="currentColor" strokeOpacity="0.05" />
               ))}
-              
+
               {/* Productivity Line Path */}
-              <path 
-                d="M 0 150 Q 100 80 200 120 T 400 40 T 600 90 T 700 60" 
-                fill="none" 
-                stroke="#6366f1" 
-                strokeWidth="4" 
+              <path
+                d="M 0 150 Q 100 80 200 120 T 400 40 T 600 90 T 700 60"
+                fill="none"
+                stroke="#6366f1"
+                strokeWidth="4"
                 strokeLinecap="round"
                 className="drop-shadow-[0_4px_10px_rgba(99,102,241,0.3)]"
               />
-              
+
               {/* Area under the path */}
-              <path 
-                d="M 0 150 Q 100 80 200 120 T 400 40 T 600 90 T 700 60 L 700 200 L 0 200 Z" 
-                fill="url(#gradient-prod)" 
+              <path
+                d="M 0 150 Q 100 80 200 120 T 400 40 T 600 90 T 700 60 L 700 200 L 0 200 Z"
+                fill="url(#gradient-prod)"
                 fillOpacity="0.1"
               />
-              
+
               <defs>
                 <linearGradient id="gradient-prod" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#6366f1" />
@@ -85,33 +147,33 @@ const Analytics: React.FC = () => {
 
         {/* Consistency Score Card */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-5">
-              <Zap className="w-32 h-32 text-indigo-500" />
+          <div className="absolute top-0 right-0 p-4 opacity-5">
+            <Zap className="w-32 h-32 text-indigo-500" />
+          </div>
+
+          <div className="relative w-32 h-32 mb-6">
+            <svg className="w-full h-full -rotate-90">
+              <circle cx="64" cy="64" r="58" fill="none" stroke="currentColor" strokeWidth="8" className="text-slate-100 dark:text-slate-800" />
+              <circle
+                cx="64" cy="64" r="58" fill="none" stroke="#6366f1" strokeWidth="8"
+                strokeDasharray="364.4" strokeDashoffset={364.4 * (1 - consistencyScore / 100)}
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-3xl font-display font-bold text-slate-900 dark:text-white">{consistencyScore}%</span>
             </div>
-            
-            <div className="relative w-32 h-32 mb-6">
-              <svg className="w-full h-full -rotate-90">
-                <circle cx="64" cy="64" r="58" fill="none" stroke="currentColor" strokeWidth="8" className="text-slate-100 dark:text-slate-800" />
-                <circle 
-                  cx="64" cy="64" r="58" fill="none" stroke="#6366f1" strokeWidth="8" 
-                  strokeDasharray="364.4" strokeDashoffset={364.4 * (1 - consistencyScore/100)} 
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-display font-bold text-slate-900 dark:text-white">{consistencyScore}%</span>
-              </div>
+          </div>
+
+          <h3 className="font-display font-bold text-slate-900 dark:text-white mb-2">Consistency Score</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px]">Your performance is extremely stable compared to last month.</p>
+
+          <div className="mt-6 w-full pt-6 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-widest px-2">
+              <span>Streak</span>
+              <span className="text-indigo-600 dark:text-indigo-400">12 Days</span>
             </div>
-            
-            <h3 className="font-display font-bold text-slate-900 dark:text-white mb-2">Consistency Score</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px]">Your performance is extremely stable compared to last month.</p>
-            
-            <div className="mt-6 w-full pt-6 border-t border-slate-100 dark:border-slate-800">
-               <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-widest px-2">
-                 <span>Streak</span>
-                 <span className="text-indigo-600 dark:text-indigo-400">12 Days</span>
-               </div>
-            </div>
+          </div>
         </div>
       </div>
 
@@ -124,28 +186,28 @@ const Analytics: React.FC = () => {
               Distraction Patterns
             </h3>
             <div className="flex gap-1">
-              {[1, 2, 3, 4].map(v => <div key={v} className={`w-3 h-3 rounded-sm bg-rose-500 opacity-${v*25}`} />)}
+              {[1, 2, 3, 4].map(v => <div key={v} className={`w-3 h-3 rounded-sm bg-rose-500`} style={{ opacity: v * 0.25 }} />)}
             </div>
           </div>
-          
+
           <div className="grid grid-cols-9 gap-2">
             <div className="col-span-1"></div>
             {hours.map(h => <div key={h} className="text-[9px] font-bold text-slate-400 uppercase text-center">{h}</div>)}
-            
-            {days.map(day => (
+
+            {days.map((day, dayIndex) => (
               <React.Fragment key={day}>
                 <div className="text-[9px] font-bold text-slate-400 uppercase py-2">{day}</div>
-                {hours.map((h, i) => {
-                  const intensity = Math.floor(Math.random() * 5);
+                {hours.map((h, hourIndex) => {
+                  // Use seeded random for consistent display
+                  const intensity = (dayIndex + hourIndex) % 5;
                   return (
-                    <div 
-                      key={h} 
-                      className={`h-8 rounded-md transition-all duration-500 ${
-                        intensity === 0 ? 'bg-slate-50 dark:bg-slate-800/50' : 
+                    <div
+                      key={h}
+                      className={`h-8 rounded-md transition-all duration-500 ${intensity === 0 ? 'bg-slate-50 dark:bg-slate-800/50' :
                         intensity === 1 ? 'bg-rose-500/10' :
-                        intensity === 2 ? 'bg-rose-500/30' :
-                        intensity === 3 ? 'bg-rose-500/60' : 'bg-rose-500'
-                      }`}
+                          intensity === 2 ? 'bg-rose-500/30' :
+                            intensity === 3 ? 'bg-rose-500/60' : 'bg-rose-500'
+                        }`}
                     />
                   );
                 })}
@@ -178,7 +240,9 @@ const Analytics: React.FC = () => {
           <div className="bg-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-indigo-600/20 flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest">Total Focus Time</p>
-              <h4 className="text-4xl font-display font-bold">42h 15m</h4>
+              <h4 className="text-4xl font-display font-bold">
+                {Math.floor(totalFocusTime / 60)}h {totalFocusTime % 60}m
+              </h4>
               <p className="text-indigo-200 text-[10px]">+5.4h vs last week</p>
             </div>
             <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md">

@@ -1,10 +1,10 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
-*/
+ */
 import React, { useState, useEffect } from 'react';
 import { View, Task, UserProfile } from './types';
-import { INITIAL_TASKS } from './mockData';
+import { authApi, tasksApi, getAuthToken, setAuthToken } from './services/api';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import TaskManager from './components/TaskManager';
@@ -22,7 +22,32 @@ const App: React.FC = () => {
   const [view, setView] = useState<View>('LOGIN');
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check for existing auth on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = getAuthToken();
+      if (token) {
+        try {
+          const { user: userData } = await authApi.getProfile();
+          setUser(userData);
+          setView('DASHBOARD');
+
+          // Load tasks
+          const { tasks: taskData } = await tasksApi.getAll();
+          setTasks(taskData);
+        } catch (error) {
+          // Token invalid, clear it
+          setAuthToken(null);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -32,9 +57,28 @@ const App: React.FC = () => {
     }
   }, [isDarkMode]);
 
-  const handleLogin = (u: UserProfile) => {
+  const handleLogin = async (u: UserProfile) => {
     setUser(u);
     setView('ONBOARDING');
+
+    // Load tasks after login
+    try {
+      const { tasks: taskData } = await tasksApi.getAll();
+      setTasks(taskData);
+    } catch (error) {
+      console.error('Failed to load tasks:', error);
+    }
+  };
+
+  const handleLogout = () => {
+    authApi.logout();
+    setUser(null);
+    setTasks([]);
+    setView('LOGIN');
+  };
+
+  const handleTasksUpdate = (newTasks: Task[]) => {
+    setTasks(newTasks);
   };
 
   const renderView = () => {
@@ -47,7 +91,7 @@ const App: React.FC = () => {
       case 'DASHBOARD':
         return <Dashboard tasks={tasks} />;
       case 'TASKS':
-        return <TaskManager tasks={tasks} setTasks={setTasks} />;
+        return <TaskManager tasks={tasks} setTasks={handleTasksUpdate} />;
       case 'ANALYTICS':
         return <Analytics />;
       case 'INSIGHTS':
@@ -67,11 +111,20 @@ const App: React.FC = () => {
 
   const isAuthView = view === 'LOGIN' || view === 'SIGNUP' || view === 'ONBOARDING';
 
+  // Show loading state while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
       {!isAuthView ? (
         <div className="flex h-screen overflow-hidden">
-          <Sidebar currentView={view} setView={setView} onLogout={() => setView('LOGIN')} />
+          <Sidebar currentView={view} setView={setView} onLogout={handleLogout} />
           <main className="flex-1 overflow-y-auto relative p-4 md:p-8">
             {/* Top Bar */}
             <div className="flex justify-between items-center mb-8">
@@ -84,13 +137,13 @@ const App: React.FC = () => {
                 </p>
               </div>
               <div className="flex items-center gap-4">
-                <button 
+                <button
                   onClick={() => setIsDarkMode(!isDarkMode)}
                   className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-indigo-500/50 transition-all"
                 >
                   {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                 </button>
-                <div 
+                <div
                   onClick={() => setView('PROFILE')}
                   className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20 cursor-pointer hover:scale-105 transition-transform"
                 >

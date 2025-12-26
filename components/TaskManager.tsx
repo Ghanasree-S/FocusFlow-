@@ -1,19 +1,21 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
-*/
+ */
 import React, { useState } from 'react';
 import { Task } from '../types';
-import { 
-  Search, 
-  Filter, 
-  Plus, 
-  MoreVertical, 
-  Clock, 
-  CheckCircle2, 
+import { tasksApi } from '../services/api';
+import {
+  Search,
+  Filter,
+  Plus,
+  MoreVertical,
+  Clock,
+  CheckCircle2,
   Circle,
   Calendar,
-  Layers
+  Layers,
+  X
 } from 'lucide-react';
 
 interface TaskManagerProps {
@@ -24,9 +26,55 @@ interface TaskManagerProps {
 const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
   const [filter, setFilter] = useState<'All' | 'Today' | 'Upcoming' | 'Completed'>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newTask, setNewTask] = useState({ title: '', deadline: '', category: 'Work', priority: 'Medium' });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const toggleTask = (id: string) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed, progress: !t.completed ? 100 : 0 } : t));
+  const toggleTask = async (id: string) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
+    try {
+      const { task: updatedTask } = await tasksApi.update(id, {
+        completed: !task.completed,
+        progress: !task.completed ? 100 : 0
+      });
+
+      setTasks(tasks.map(t => t.id === id ? updatedTask : t));
+    } catch (error) {
+      console.error('Failed to update task:', error);
+    }
+  };
+
+  const handleAddTask = async () => {
+    if (!newTask.title.trim()) return;
+
+    setIsLoading(true);
+    try {
+      const { task: createdTask } = await tasksApi.create({
+        title: newTask.title,
+        deadline: newTask.deadline,
+        category: newTask.category,
+        priority: newTask.priority
+      });
+
+      setTasks([...tasks, createdTask]);
+      setNewTask({ title: '', deadline: '', category: 'Work', priority: 'Medium' });
+      setShowAddModal(false);
+    } catch (error) {
+      console.error('Failed to create task:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteTask = async (id: string) => {
+    try {
+      await tasksApi.delete(id);
+      setTasks(tasks.filter(t => t.id !== id));
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+    }
   };
 
   const filteredTasks = tasks.filter(t => {
@@ -42,9 +90,9 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
       <div className="flex flex-col md:flex-row gap-4 items-center">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Search tasks, categories..." 
+          <input
+            type="text"
+            placeholder="Search tasks, categories..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none"
@@ -55,12 +103,90 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
             <Filter className="w-4 h-4" />
             <span>Filter</span>
           </button>
-          <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg shadow-indigo-600/20 transition-all font-bold">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg shadow-indigo-600/20 transition-all font-bold"
+          >
             <Plus className="w-5 h-5" />
             <span>Add Task</span>
           </button>
         </div>
       </div>
+
+      {/* Add Task Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-display font-bold text-slate-900 dark:text-white">Add New Task</h3>
+              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Task Title</label>
+                <input
+                  type="text"
+                  value={newTask.title}
+                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                  placeholder="What needs to be done?"
+                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Deadline</label>
+                <input
+                  type="date"
+                  value={newTask.deadline}
+                  onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value })}
+                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Category</label>
+                  <select
+                    value={newTask.category}
+                    onChange={(e) => setNewTask({ ...newTask, category: e.target.value })}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
+                  >
+                    <option value="Work">Work</option>
+                    <option value="Personal">Personal</option>
+                    <option value="Study">Study</option>
+                    <option value="Health">Health</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Priority</label>
+                  <select
+                    value={newTask.priority}
+                    onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                    className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                onClick={handleAddTask}
+                disabled={isLoading || !newTask.title.trim()}
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all mt-4"
+              >
+                {isLoading ? 'Creating...' : 'Create Task'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Left: Filter Sidebar */}
@@ -70,11 +196,10 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
             <button
               key={item}
               onClick={() => setFilter(item)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                filter === item 
-                ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${filter === item
+                  ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900'
+                }`}
             >
               {item === 'All' && <Layers className="w-4 h-4" />}
               {item === 'Today' && <Clock className="w-4 h-4" />}
@@ -90,13 +215,14 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
               </span>
             </button>
           ))}
-          
+
           <div className="pt-8 px-4">
-            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">Focus Projects</h3>
+            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">Categories</h3>
             <div className="space-y-4">
-              <ProjectTag color="indigo" label="Work Automation" count={4} />
-              <ProjectTag color="emerald" label="Personal Growth" count={2} />
-              <ProjectTag color="amber" label="University Prep" count={12} />
+              <ProjectTag color="indigo" label="Work" count={tasks.filter(t => t.category === 'Work').length} />
+              <ProjectTag color="emerald" label="Personal" count={tasks.filter(t => t.category === 'Personal').length} />
+              <ProjectTag color="amber" label="Study" count={tasks.filter(t => t.category === 'Study').length} />
+              <ProjectTag color="rose" label="Health" count={tasks.filter(t => t.category === 'Health').length} />
             </div>
           </div>
         </div>
@@ -107,17 +233,16 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
             <h2 className="font-display font-bold text-slate-900 dark:text-white">Active Tasks</h2>
             <span className="text-xs text-slate-400">{filteredTasks.length} tasks matching view</span>
           </div>
-          
+
           <div className="space-y-3">
             {filteredTasks.map((task) => (
-              <div 
-                key={task.id} 
-                className={`p-4 bg-white dark:bg-slate-900 rounded-2xl border transition-all group ${
-                  task.completed ? 'opacity-60 border-transparent bg-slate-100 dark:bg-slate-800/30' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-500/30 shadow-sm'
-                }`}
+              <div
+                key={task.id}
+                className={`p-4 bg-white dark:bg-slate-900 rounded-2xl border transition-all group ${task.completed ? 'opacity-60 border-transparent bg-slate-100 dark:bg-slate-800/30' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-500/30 shadow-sm'
+                  }`}
               >
                 <div className="flex items-center gap-4">
-                  <button 
+                  <button
                     onClick={() => toggleTask(task.id)}
                     className={`shrink-0 transition-colors ${task.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-indigo-500'}`}
                   >
@@ -128,9 +253,8 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
                       <h4 className={`font-bold truncate text-slate-800 dark:text-slate-100 ${task.completed ? 'line-through' : ''}`}>
                         {task.title}
                       </h4>
-                      <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded ${
-                        task.priority === 'High' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-600'
-                      }`}>
+                      <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded ${task.priority === 'High' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-600'
+                        }`}>
                         {task.priority}
                       </span>
                     </div>
@@ -146,14 +270,17 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
                         <div className="h-full bg-indigo-500" style={{ width: `${task.progress}%` }}></div>
                       </div>
                     </div>
-                    <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    <button
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="p-2 text-slate-400 hover:text-rose-500 transition-colors"
+                    >
                       <MoreVertical className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
               </div>
             ))}
-            
+
             {filteredTasks.length === 0 && (
               <div className="py-20 text-center space-y-4">
                 <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full mx-auto flex items-center justify-center text-slate-300">

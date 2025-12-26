@@ -1,10 +1,11 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
-*/
+ */
 import React, { useState } from 'react';
 import { View, UserProfile } from '../types';
-import { Zap, Mail, Lock, User, ArrowRight, Github } from 'lucide-react';
+import { authApi } from '../services/api';
+import { Zap, Mail, Lock, User, ArrowRight, Github, AlertCircle } from 'lucide-react';
 
 interface AuthProps {
   mode: 'LOGIN' | 'SIGNUP';
@@ -16,16 +17,44 @@ const Auth: React.FC<AuthProps> = ({ mode, onAuthSuccess, setView }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate successful auth
-    onAuthSuccess({
-      name: name || 'Demo User',
-      email: email || 'demo@focusflow.ai',
-      style: 'Balanced',
-      goals: []
-    });
+    setError('');
+    setIsLoading(true);
+
+    try {
+      let data;
+
+      if (mode === 'SIGNUP') {
+        data = await authApi.register(name, email, password);
+      } else {
+        data = await authApi.login(email, password);
+      }
+
+      onAuthSuccess(data.user);
+    } catch (err: any) {
+      setError(err.message || 'Authentication failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Demo login helper
+  const handleDemoLogin = async () => {
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const data = await authApi.login('demo@focusflow.ai', 'demo123');
+      onAuthSuccess(data.user);
+    } catch (err: any) {
+      setError('Demo login failed. Make sure the backend is running and seeded.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -44,17 +73,25 @@ const Auth: React.FC<AuthProps> = ({ mode, onAuthSuccess, setView }) => {
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl flex items-center gap-2 text-red-600 text-sm">
+              <AlertCircle className="w-4 h-4" />
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             {mode === 'SIGNUP' && (
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Full Name</label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input 
-                    type="text" 
-                    placeholder="Enter your name" 
+                  <input
+                    type="text"
+                    placeholder="Enter your name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    required
                     className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-sm"
                   />
                 </div>
@@ -65,11 +102,12 @@ const Auth: React.FC<AuthProps> = ({ mode, onAuthSuccess, setView }) => {
               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input 
-                  type="email" 
-                  placeholder="name@company.com" 
+                <input
+                  type="email"
+                  placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
                   className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-sm"
                 />
               </div>
@@ -84,26 +122,44 @@ const Auth: React.FC<AuthProps> = ({ mode, onAuthSuccess, setView }) => {
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input 
-                  type="password" 
-                  placeholder="••••••••" 
+                <input
+                  type="password"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
                   className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none text-sm"
                 />
               </div>
             </div>
 
-            <button 
-              type="submit" 
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 transition-all active:scale-95 mt-4"
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 transition-all active:scale-95 mt-4"
             >
-              <span>{mode === 'LOGIN' ? 'Log In' : 'Create Account'}</span>
-              <ArrowRight className="w-5 h-5" />
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  <span>{mode === 'LOGIN' ? 'Log In' : 'Create Account'}</span>
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
             </button>
           </form>
 
-          <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800">
+          <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 space-y-3">
+            <button
+              onClick={handleDemoLogin}
+              disabled={isLoading}
+              className="w-full py-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center gap-2 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-all text-sm font-bold"
+            >
+              <Zap className="w-4 h-4" />
+              <span>Try Demo Account</span>
+            </button>
+
             <button className="w-full py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-sm font-bold">
               <Github className="w-5 h-5" />
               <span>Continue with GitHub</span>
@@ -113,7 +169,7 @@ const Auth: React.FC<AuthProps> = ({ mode, onAuthSuccess, setView }) => {
 
         <p className="text-center mt-8 text-sm text-slate-500">
           {mode === 'LOGIN' ? "Don't have an account?" : "Already have an account?"}
-          <button 
+          <button
             onClick={() => setView(mode === 'LOGIN' ? 'SIGNUP' : 'LOGIN')}
             className="ml-2 text-indigo-500 font-bold hover:underline"
           >

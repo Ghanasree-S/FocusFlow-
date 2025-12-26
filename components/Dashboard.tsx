@@ -1,58 +1,114 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
-*/
-import React from 'react';
+ */
+import React, { useState, useEffect } from 'react';
 import { Task } from '../types';
-import { TIME_SERIES_DATA } from '../mockData';
-import { 
-  CheckCircle2, 
-  Clock, 
-  AlertTriangle, 
-  ArrowUpRight, 
-  Plus, 
-  Target 
+import { insightsApi } from '../services/api';
+import {
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  ArrowUpRight,
+  Plus,
+  Target
 } from 'lucide-react';
 
 interface DashboardProps {
   tasks: Task[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
-  const completedTasks = tasks.filter(t => t.completed).length;
-  const pendingTasks = tasks.length - completedTasks;
-  const focusScore = 84;
+interface DashboardData {
+  taskStats: { total: number; completed: number; pending: number; high_priority: number };
+  focusScore: number;
+  distractionSpikes: number;
+  hourlyData: Array<{ time: string; productive: number; distracted: number }>;
+  hasData?: boolean;
+}
 
+const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(() => {
+    // Load cached data immediately on mount
+    const cached = localStorage.getItem('focusflow_dashboard_cache');
+    return cached ? JSON.parse(cached) : null;
+  });
+  const [isLoading, setIsLoading] = useState(!localStorage.getItem('focusflow_dashboard_cache'));
+  const [lastUpdated, setLastUpdated] = useState<string>('');
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const data = await insightsApi.getDashboard();
+        setDashboardData(data);
+        // Cache the data
+        localStorage.setItem('focusflow_dashboard_cache', JSON.stringify(data));
+        setLastUpdated(new Date().toLocaleTimeString());
+      } catch (error) {
+        console.error('Failed to fetch dashboard:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Fetch immediately
+    fetchDashboard();
+
+    // Then refresh every 60 seconds
+    const interval = setInterval(fetchDashboard, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Use ONLY real data from API - no mock fallbacks
+  const completedTasks = dashboardData?.taskStats?.completed ?? 0;
+  const totalTasks = dashboardData?.taskStats?.total ?? 0;
+  const pendingTasks = dashboardData?.taskStats?.pending ?? 0;
+  const focusScore = dashboardData?.focusScore ?? 0;
+  const distractionSpikes = dashboardData?.distractionSpikes ?? 0;
+
+  // Use real hourly data or empty array
+  const timeSeriesData = dashboardData?.hourlyData?.length
+    ? dashboardData.hourlyData
+    : [];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  // Always show dashboard - even if data is zero
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          label="Tasks Completed" 
-          value={completedTasks.toString()} 
-          subValue={`of ${tasks.length} total`} 
+        <StatCard
+          label="Tasks Completed"
+          value={completedTasks.toString()}
+          subValue={`of ${totalTasks} total`}
           icon={<CheckCircle2 className="text-emerald-500" />}
           color="emerald"
         />
-        <StatCard 
-          label="Focus Score" 
-          value={`${focusScore}%`} 
-          subValue="+4% from yesterday" 
+        <StatCard
+          label="Focus Score"
+          value={`${focusScore}%`}
+          subValue="+4% from yesterday"
           icon={<Target className="text-indigo-500" />}
           color="indigo"
           trend="up"
         />
-        <StatCard 
-          label="Pending Deadline" 
-          value={pendingTasks.toString()} 
-          subValue="2 due within 24h" 
+        <StatCard
+          label="Pending Deadline"
+          value={pendingTasks.toString()}
+          subValue="2 due within 24h"
           icon={<Clock className="text-amber-500" />}
           color="amber"
         />
-        <StatCard 
-          label="Distraction Spikes" 
-          value="3" 
-          subValue="Lower than average" 
+        <StatCard
+          label="Distraction Spikes"
+          value={distractionSpikes.toString()}
+          subValue="Lower than average"
           icon={<AlertTriangle className="text-rose-500" />}
           color="rose"
         />
@@ -74,22 +130,22 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
               </div>
             </div>
           </div>
-          
+
           <div className="h-64 relative flex items-end justify-between gap-1 mt-4">
-            {TIME_SERIES_DATA.map((d, i) => (
+            {timeSeriesData.map((d, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
                 <div className="w-full flex flex-col-reverse gap-0.5 max-w-[24px]">
-                  <div 
-                    className="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm transition-all duration-700 delay-100" 
+                  <div
+                    className="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm transition-all duration-700 delay-100"
                     style={{ height: `${d.distracted * 1.5}px` }}
                   ></div>
-                  <div 
-                    className="w-full bg-indigo-500 rounded-t-sm transition-all duration-700 shadow-[0_0_15px_rgba(99,102,241,0.2)]" 
+                  <div
+                    className="w-full bg-indigo-500 rounded-t-sm transition-all duration-700 shadow-[0_0_15px_rgba(99,102,241,0.2)]"
                     style={{ height: `${d.productive * 1.5}px` }}
                   ></div>
                 </div>
                 <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter">{d.time}</span>
-                
+
                 {/* Tooltip */}
                 <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] p-2 rounded shadow-xl z-20 pointer-events-none min-w-[100px]">
                   <p className="font-bold border-b border-white/10 mb-1 pb-1">{d.time}</p>
@@ -113,17 +169,16 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
             {tasks.filter(t => !t.completed).slice(0, 4).map(task => (
               <div key={task.id} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer">
                 <div className="flex justify-between items-start mb-2">
-                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                    task.priority === 'High' ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/20' : 'bg-slate-200 text-slate-600 dark:bg-slate-700'
-                  }`}>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${task.priority === 'High' ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/20' : 'bg-slate-200 text-slate-600 dark:bg-slate-700'
+                    }`}>
                     {task.priority}
                   </span>
                   <span className="text-[10px] text-slate-400">{task.deadline}</span>
                 </div>
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2 truncate">{task.title}</p>
                 <div className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-indigo-500 transition-all duration-1000" 
+                  <div
+                    className="h-full bg-indigo-500 transition-all duration-1000"
                     style={{ width: `${task.progress}%` }}
                   ></div>
                 </div>

@@ -35,6 +35,7 @@ export interface MLForecast {
 }
 
 export interface UserProfile {
+  id?: string;
   name: string;
   email: string;
   style: 'Balanced' | 'High-focus' | 'Flexible';
