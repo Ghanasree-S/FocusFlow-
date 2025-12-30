@@ -10,6 +10,7 @@ import Dashboard from './components/Dashboard';
 import TaskManager from './components/TaskManager';
 import Analytics from './components/Analytics';
 import Insights from './components/Insights';
+import MLInsights from './components/MLInsights';
 import FocusMode from './components/FocusMode';
 import Reports from './components/Reports';
 import Settings from './components/Settings';
@@ -96,6 +97,8 @@ const App: React.FC = () => {
         return <Analytics />;
       case 'INSIGHTS':
         return <Insights />;
+      case 'ML_INSIGHTS':
+        return <MLInsights />;
       case 'FOCUS':
         return <FocusMode />;
       case 'REPORTS':

@@ -45,6 +45,15 @@ class ActivityModel:
     
     def get_activities(self, user_id: str, days: int = 7) -> list:
         """Get activities for the last N days"""
+        from bson import ObjectId
+        
+        # Convert to ObjectId if string
+        if isinstance(user_id, str):
+            try:
+                user_id = ObjectId(user_id)
+            except:
+                pass
+        
         start_date = datetime.utcnow() - timedelta(days=days)
         
         activities = self.collection.find({
@@ -56,6 +65,15 @@ class ActivityModel:
     
     def get_daily_summary(self, user_id: str, date: datetime = None) -> dict:
         """Get activity summary for a specific day"""
+        from bson import ObjectId
+        
+        # Convert to ObjectId if string
+        if isinstance(user_id, str):
+            try:
+                user_id = ObjectId(user_id)
+            except:
+                pass
+        
         if date is None:
             date = datetime.utcnow()
         
@@ -110,6 +128,15 @@ class ActivityModel:
     
     def get_hourly_breakdown(self, user_id: str, days: int = 7) -> list:
         """Get hourly activity breakdown"""
+        from bson import ObjectId
+        
+        # Convert to ObjectId if string
+        if isinstance(user_id, str):
+            try:
+                user_id = ObjectId(user_id)
+            except:
+                pass
+        
         start_date = datetime.utcnow() - timedelta(days=days)
         
         pipeline = [

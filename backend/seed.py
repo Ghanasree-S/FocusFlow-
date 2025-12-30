@@ -1,9 +1,10 @@
 """
-Seed script to create demo user and initialize database collections
-Creates only user - no mock data, tracker will collect real data
+Seed script to create demo user, initialize database collections, and add sample data
 """
 import os
 import sys
+import random
+from datetime import datetime, timedelta
 
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -67,8 +68,112 @@ def seed_database():
     print("   Email:    demo@focusflow.ai")
     print("   Password: demo123")
     print()
-    print("🚀 Next step: Run 'python app.py' to start server + tracker")
+    
+    # Add sample activity data for demo user
+    seed_activities(db, user_id)
+    
+    # Add sample data for ALL other users too
+    print("📊 Adding data for all users...")
+    all_users = db.users.find({})
+    for u in all_users:
+        if str(u['_id']) != user_id:
+            seed_activities(db, u['_id'])
+    
+    print("🚀 Next step: Run 'python app.py' to start server")
     print("=" * 50)
+
+
+def seed_activities(db, user_id):
+    """Add sample activity data for the past 7 days"""
+    from bson import ObjectId
+    
+    print("📊 Adding sample activity data...")
+    
+    # Convert user_id to ObjectId if needed
+    if isinstance(user_id, str):
+        user_id = ObjectId(user_id)
+    
+    # Clear existing activities
+    db.activities.delete_many({'user_id': user_id})
+    db.focus_sessions.delete_many({'user_id': user_id})
+    
+    # Apps to simulate
+    productive_apps = ['Visual Studio Code', 'GitHub', 'ChatGPT', 'Google Docs', 'Stack Overflow', 'Figma', 'Notion']
+    distracting_apps = ['YouTube', 'Netflix', 'Reddit', 'Instagram', 'Twitter', 'Facebook']
+    neutral_apps = ['Gmail', 'Google Search', 'News', 'Weather']
+    
+    activities = []
+    focus_sessions = []
+    
+    # Generate data for the past 7 days
+    for day_offset in range(7):
+        current_date = datetime.utcnow() - timedelta(days=day_offset)
+        
+        # Morning - mostly productive
+        for _ in range(random.randint(4, 6)):
+            app = random.choice(productive_apps)
+            activities.append({
+                'user_id': user_id,
+                'app_name': app,
+                'duration_minutes': random.randint(10, 45),
+                'category': 'productive',
+                'timestamp': current_date.replace(hour=random.randint(9, 11), minute=random.randint(0, 59))
+            })
+        
+        # Afternoon - mixed
+        for _ in range(random.randint(3, 5)):
+            if random.random() < 0.6:
+                app, category = random.choice(productive_apps), 'productive'
+            elif random.random() < 0.8:
+                app, category = random.choice(neutral_apps), 'neutral'
+            else:
+                app, category = random.choice(distracting_apps), 'distracting'
+            
+            activities.append({
+                'user_id': user_id,
+                'app_name': app,
+                'duration_minutes': random.randint(5, 30),
+                'category': category,
+                'timestamp': current_date.replace(hour=random.randint(14, 16), minute=random.randint(0, 59))
+            })
+        
+        # Evening - more distractions
+        for _ in range(random.randint(2, 4)):
+            if random.random() < 0.3:
+                app, category = random.choice(productive_apps), 'productive'
+            else:
+                app, category = random.choice(distracting_apps), 'distracting'
+            
+            activities.append({
+                'user_id': user_id,
+                'app_name': app,
+                'duration_minutes': random.randint(10, 60),
+                'category': category,
+                'timestamp': current_date.replace(hour=random.randint(18, 20), minute=random.randint(0, 59))
+            })
+        
+        # Add focus sessions
+        for _ in range(random.randint(2, 3)):
+            start = current_date.replace(hour=random.randint(9, 17), minute=random.randint(0, 59))
+            focus_sessions.append({
+                'user_id': user_id,
+                'duration': 25,
+                'completed': random.random() < 0.8,
+                'start_time': start,
+                'end_time': start + timedelta(minutes=25)
+            })
+    
+    # Insert all data
+    if activities:
+        db.activities.insert_many(activities)
+        print(f"   ✅ Added {len(activities)} activities (7 days)")
+    
+    if focus_sessions:
+        db.focus_sessions.insert_many(focus_sessions)
+        print(f"   ✅ Added {len(focus_sessions)} focus sessions")
+    
+    print()
+
 
 if __name__ == '__main__':
     seed_database()

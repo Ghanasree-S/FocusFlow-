@@ -21,6 +21,8 @@ class DataProcessor:
         - focus_sessions: Number of focus sessions
         - avg_session_duration: Average focus session length
         - consistency_score: Days with >2hrs productive work
+        - overdue_tasks: Number of overdue tasks
+        - total_tasks: Total number of tasks
         """
         # Calculate from weekly trends
         total_productive = sum(d.get('productive_minutes', 0) for d in weekly_trends)
@@ -35,7 +37,9 @@ class DataProcessor:
             'focus_sessions': focus_stats.get('total_sessions', 0),
             'avg_session_duration': focus_stats.get('avg_duration', 0),
             'consistency_score': productive_days / 7 * 100,
-            'focus_ratio': total_productive / max(total_productive + total_distracted, 1)
+            'focus_ratio': total_productive / max(total_productive + total_distracted, 1),
+            'overdue_tasks': task_stats.get('overdue', 0),
+            'total_tasks': task_stats.get('total', 0)
         }
         
         return features
@@ -80,13 +84,14 @@ class DataProcessor:
         Calculate overall productivity score (0-100)
         
         Weighted combination of:
-        - Task completion rate (30%)
+        - Task completion rate (25%)
         - Focus ratio (30%)
         - Consistency score (20%)
         - Session quality (20%)
+        - Overdue penalty (up to -15% deduction)
         """
         weights = {
-            'completion_rate': 0.30,
+            'completion_rate': 0.25,
             'focus_ratio': 0.30,
             'consistency_score': 0.20,
             'session_quality': 0.20
@@ -104,14 +109,23 @@ class DataProcessor:
         else:
             session_quality = max(60, 100 - (avg_duration - 60) * 0.5)
         
-        score = (
+        # Calculate base score
+        base_score = (
             features.get('completion_rate', 0) * weights['completion_rate'] +
             focus_ratio_normalized * weights['focus_ratio'] +
             features.get('consistency_score', 0) * weights['consistency_score'] +
             session_quality * weights['session_quality']
         )
         
-        return min(100, max(0, round(score, 1)))
+        # Apply overdue penalty (max 15% of total score)
+        overdue_count = features.get('overdue_tasks', 0)
+        total_tasks = features.get('total_tasks', 1)
+        if total_tasks > 0 and overdue_count > 0:
+            overdue_ratio = overdue_count / total_tasks
+            overdue_penalty = min(15, overdue_ratio * 30)  # Max 15 point penalty
+            base_score = base_score - overdue_penalty
+        
+        return min(100, max(0, round(base_score, 1)))
     
     def detect_best_focus_hours(self, hourly_data: list) -> str:
         """Detect the best focus window from hourly data"""

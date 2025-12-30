@@ -52,22 +52,9 @@ const Insights: React.FC = () => {
         setPatterns(patternsData.patterns || []);
       } catch (error) {
         console.error('Failed to fetch insights:', error);
-        // Use fallback data
-        setForecast({
-          productivityLevel: 'High',
-          nextDayWorkload: 78,
-          completionProbability: 82,
-          bestFocusWindow: '09:00 AM - 11:30 AM',
-          distractionTrigger: 'Social Media / Morning Emails',
-          trend: 'Up',
-          expectedLoadLevel: 'Medium',
-          stressRisk: 'Low'
-        });
-        setPatterns([
-          { type: 'Optimization', title: 'Consistency Streak', description: 'You are most productive after morning physical activity. Your streak is currently at 5 days.', icon: 'Lightbulb' },
-          { type: 'Growth', title: 'Deep Work Capacity', description: 'Average focus duration has increased from 42m to 58m this week (+38%).', icon: 'Timer' },
-          { type: 'Warning', title: 'Context Switching', description: 'Switching between Email and Work apps before 11 AM reduces output by ~15%.', icon: 'ShieldAlert' }
-        ]);
+        // No fallback - show empty state
+        setForecast(null);
+        setPatterns([]);
       } finally {
         setIsLoading(false);
       }

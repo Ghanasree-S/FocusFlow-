@@ -15,7 +15,8 @@ import {
   Circle,
   Calendar,
   Layers,
-  X
+  X,
+  AlertCircle
 } from 'lucide-react';
 
 interface TaskManagerProps {
@@ -24,7 +25,7 @@ interface TaskManagerProps {
 }
 
 const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
-  const [filter, setFilter] = useState<'All' | 'Today' | 'Upcoming' | 'Completed'>('All');
+  const [filter, setFilter] = useState<'All' | 'Today' | 'Upcoming' | 'Overdue' | 'Completed'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTask, setNewTask] = useState({ title: '', deadline: '', category: 'Work', priority: 'Medium' });
@@ -80,6 +81,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
   const filteredTasks = tasks.filter(t => {
     const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase());
     if (filter === 'Completed') return t.completed && matchesSearch;
+    if (filter === 'Overdue') return t.is_overdue && !t.completed && matchesSearch;
     if (filter === 'All') return matchesSearch;
     return !t.completed && matchesSearch;
   });
@@ -192,24 +194,28 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
         {/* Left: Filter Sidebar */}
         <div className="lg:col-span-1 space-y-2">
           <h3 className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">View</h3>
-          {(['All', 'Today', 'Upcoming', 'Completed'] as const).map((item) => (
+          {(['All', 'Today', 'Upcoming', 'Overdue', 'Completed'] as const).map((item) => (
             <button
               key={item}
               onClick={() => setFilter(item)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${filter === item
-                  ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900'
+                ? item === 'Overdue'
+                  ? 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold'
+                  : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900'
                 }`}
             >
               {item === 'All' && <Layers className="w-4 h-4" />}
               {item === 'Today' && <Clock className="w-4 h-4" />}
               {item === 'Upcoming' && <Calendar className="w-4 h-4" />}
+              {item === 'Overdue' && <AlertCircle className="w-4 h-4" />}
               {item === 'Completed' && <CheckCircle2 className="w-4 h-4" />}
               <span className="text-sm">{item}</span>
-              <span className="ml-auto text-[10px] opacity-60">
+              <span className={`ml-auto text-[10px] opacity-60 ${item === 'Overdue' && tasks.filter(t => t.is_overdue && !t.completed).length > 0 ? 'bg-rose-500 text-white px-1.5 py-0.5 rounded-full opacity-100' : ''}`}>
                 {tasks.filter(t => {
                   if (item === 'All') return true;
                   if (item === 'Completed') return t.completed;
+                  if (item === 'Overdue') return t.is_overdue && !t.completed;
                   return !t.completed;
                 }).length}
               </span>
@@ -238,36 +244,45 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
             {filteredTasks.map((task) => (
               <div
                 key={task.id}
-                className={`p-4 bg-white dark:bg-slate-900 rounded-2xl border transition-all group ${task.completed ? 'opacity-60 border-transparent bg-slate-100 dark:bg-slate-800/30' : 'border-slate-200 dark:border-slate-800 hover:border-indigo-500/30 shadow-sm'
+                className={`p-4 bg-white dark:bg-slate-900 rounded-2xl border transition-all group ${task.completed
+                    ? 'opacity-60 border-transparent bg-slate-100 dark:bg-slate-800/30'
+                    : task.is_overdue
+                      ? 'border-rose-400 dark:border-rose-500 bg-rose-50/50 dark:bg-rose-900/10 shadow-sm shadow-rose-200 dark:shadow-rose-900/20'
+                      : 'border-slate-200 dark:border-slate-800 hover:border-indigo-500/30 shadow-sm'
                   }`}
               >
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => toggleTask(task.id)}
-                    className={`shrink-0 transition-colors ${task.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-indigo-500'}`}
+                    className={`shrink-0 transition-colors ${task.completed ? 'text-emerald-500' : task.is_overdue ? 'text-rose-400 hover:text-rose-500' : 'text-slate-300 hover:text-indigo-500'}`}
                   >
-                    {task.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+                    {task.completed ? <CheckCircle2 className="w-6 h-6" /> : task.is_overdue ? <AlertCircle className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
                   </button>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className={`font-bold truncate text-slate-800 dark:text-slate-100 ${task.completed ? 'line-through' : ''}`}>
+                      <h4 className={`font-bold truncate ${task.completed ? 'line-through text-slate-500' : task.is_overdue ? 'text-rose-700 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100'}`}>
                         {task.title}
                       </h4>
+                      {task.is_overdue && !task.completed && (
+                        <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-rose-500 text-white animate-pulse">
+                          OVERDUE
+                        </span>
+                      )}
                       <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded ${task.priority === 'High' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-600'
                         }`}>
                         {task.priority}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4 text-[10px] text-slate-400">
+                    <div className={`flex items-center gap-4 text-[10px] ${task.is_overdue && !task.completed ? 'text-rose-500' : 'text-slate-400'}`}>
                       <div className="flex items-center gap-1"><Layers className="w-3 h-3" /> {task.category}</div>
                       <div className="flex items-center gap-1"><Clock className="w-3 h-3" /> {task.deadline}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="hidden md:flex flex-col items-end gap-1 w-24">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">{task.progress}%</span>
+                      <span className={`text-[10px] font-bold uppercase ${task.is_overdue && !task.completed ? 'text-rose-500' : 'text-slate-500'}`}>{task.progress}%</span>
                       <div className="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-indigo-500" style={{ width: `${task.progress}%` }}></div>
+                        <div className={`h-full ${task.is_overdue && !task.completed ? 'bg-rose-500' : 'bg-indigo-500'}`} style={{ width: `${task.progress}%` }}></div>
                       </div>
                     </div>
                     <button

@@ -37,18 +37,8 @@ const Reports: React.FC = () => {
         setReport(data);
       } catch (error) {
         console.error('Failed to fetch report:', error);
-        // Use fallback data
-        setReport({
-          period: 'Last 7 days',
-          tasksCompleted: 12,
-          tasksCreated: 15,
-          completionRate: 80,
-          totalFocusTime: '28h 12m',
-          avgSessionDuration: '32.5 min',
-          productiveTime: '1680 min',
-          distractedTime: '725 min',
-          focusScore: 78
-        });
+        // No fallback - show null state
+        setReport(null);
       } finally {
         setIsLoading(false);
       }

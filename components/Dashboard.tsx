@@ -121,39 +121,87 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
             <h3 className="font-display font-bold text-slate-900 dark:text-white">Productivity Trends</h3>
             <div className="flex items-center gap-4 text-xs font-medium">
               <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                <div className="w-4 h-1 bg-indigo-500 rounded"></div>
                 <span className="text-slate-500">Productive</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700"></div>
+                <div className="w-4 h-0.5 border-t-2 border-dashed border-rose-500"></div>
                 <span className="text-slate-500">Distracted</span>
               </div>
             </div>
           </div>
 
-          <div className="h-64 relative flex items-end justify-between gap-1 mt-4">
-            {timeSeriesData.map((d, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2 group relative">
-                <div className="w-full flex flex-col-reverse gap-0.5 max-w-[24px]">
-                  <div
-                    className="w-full bg-slate-200 dark:bg-slate-800 rounded-t-sm transition-all duration-700 delay-100"
-                    style={{ height: `${d.distracted * 1.5}px` }}
-                  ></div>
-                  <div
-                    className="w-full bg-indigo-500 rounded-t-sm transition-all duration-700 shadow-[0_0_15px_rgba(99,102,241,0.2)]"
-                    style={{ height: `${d.productive * 1.5}px` }}
-                  ></div>
-                </div>
-                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter">{d.time}</span>
+          {/* Time Series Line Chart */}
+          <div className="h-56 relative mt-4">
+            {timeSeriesData.length > 0 ? (
+              <svg className="w-full h-full" viewBox="0 0 600 200" preserveAspectRatio="none">
+                {/* Grid lines */}
+                {[0, 50, 100, 150].map(y => (
+                  <line key={y} x1="0" y1={y} x2="600" y2={y} stroke="currentColor" strokeOpacity="0.1" />
+                ))}
 
-                {/* Tooltip */}
-                <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] p-2 rounded shadow-xl z-20 pointer-events-none min-w-[100px]">
-                  <p className="font-bold border-b border-white/10 mb-1 pb-1">{d.time}</p>
-                  <p className="flex justify-between"><span>Focus:</span> <span className="text-indigo-400">{d.productive}%</span></p>
-                  <p className="flex justify-between"><span>Noise:</span> <span className="text-slate-400">{d.distracted}%</span></p>
-                </div>
+                {/* Gradient definitions */}
+                <defs>
+                  <linearGradient id="productiveGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+
+                {(() => {
+                  const maxValue = Math.max(...timeSeriesData.map(d => Math.max(d.productive, d.distracted)), 1);
+                  const width = 600;
+                  const height = 170;
+                  const stepX = width / Math.max(timeSeriesData.length - 1, 1);
+
+                  const productivePoints = timeSeriesData.map((d, i) => ({
+                    x: i * stepX,
+                    y: height - (d.productive / maxValue) * height
+                  }));
+
+                  const distractedPoints = timeSeriesData.map((d, i) => ({
+                    x: i * stepX,
+                    y: height - (d.distracted / maxValue) * height
+                  }));
+
+                  const productivePath = productivePoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+                  const distractedPath = distractedPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+                  const areaPath = productivePath + ` L ${width} ${height} L 0 ${height} Z`;
+
+                  return (
+                    <>
+                      {/* Area under productive line */}
+                      <path d={areaPath} fill="url(#productiveGradient)" />
+
+                      {/* Productive line (solid) */}
+                      <path d={productivePath} fill="none" stroke="#6366f1" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+
+                      {/* Distracted line (dashed) */}
+                      <path d={distractedPath} fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round" strokeDasharray="8,4" />
+
+                      {/* Data points */}
+                      {productivePoints.map((p, i) => (
+                        <circle key={`p-${i}`} cx={p.x} cy={p.y} r="5" fill="#6366f1" stroke="#fff" strokeWidth="2" />
+                      ))}
+                      {distractedPoints.map((p, i) => (
+                        <circle key={`d-${i}`} cx={p.x} cy={p.y} r="4" fill="#f43f5e" stroke="#fff" strokeWidth="1" />
+                      ))}
+                    </>
+                  );
+                })()}
+              </svg>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400">
+                No time series data yet
               </div>
-            ))}
+            )}
+
+            {/* X-axis labels */}
+            <div className="flex justify-between px-1 mt-1">
+              {timeSeriesData.map((d, i) => (
+                <span key={i} className="text-[9px] font-medium text-slate-400">{d.time}</span>
+              ))}
+            </div>
           </div>
         </div>
 

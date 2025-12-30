@@ -46,7 +46,12 @@ const Analytics: React.FC = () => {
 
   // Use ONLY real data - no mock fallbacks
   const consistencyScore = trendData?.focusStats?.completion_rate ?? 0;
-  const totalFocusTime = trendData?.focusStats?.total_focus_time ?? 0;
+
+  // Calculate total focus time from PRODUCTIVE ACTIVITIES (tracked apps)
+  const totalFocusTime = trendData?.weeklyTrends?.reduce(
+    (sum, d) => sum + (d.productive_minutes || 0), 0
+  ) ?? 0;
+
   const avgDuration = trendData?.focusStats?.avg_duration ?? 0;
   const hasData = trendData?.weeklyTrends?.length > 0;
 
@@ -106,6 +111,18 @@ const Analytics: React.FC = () => {
             </span>
           </div>
 
+          {/* Legend */}
+          <div className="flex items-center gap-6 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-1 bg-indigo-500 rounded"></div>
+              <span className="text-xs text-slate-500">Productive (min)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-0.5 bg-rose-500 rounded" style={{ borderTop: '2px dashed #f43f5e' }}></div>
+              <span className="text-xs text-slate-500">Distracted (min)</span>
+            </div>
+          </div>
+
           <div className="h-64 w-full relative pt-4">
             <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 700 200">
               {/* Grid lines */}
@@ -113,32 +130,75 @@ const Analytics: React.FC = () => {
                 <line key={y} x1="0" y1={y} x2="700" y2={y} stroke="currentColor" strokeOpacity="0.05" />
               ))}
 
-              {/* Productivity Line Path */}
-              <path
-                d="M 0 150 Q 100 80 200 120 T 400 40 T 600 90 T 700 60"
-                fill="none"
-                stroke="#6366f1"
-                strokeWidth="4"
-                strokeLinecap="round"
-                className="drop-shadow-[0_4px_10px_rgba(99,102,241,0.3)]"
-              />
-
-              {/* Area under the path */}
-              <path
-                d="M 0 150 Q 100 80 200 120 T 400 40 T 600 90 T 700 60 L 700 200 L 0 200 Z"
-                fill="url(#gradient-prod)"
-                fillOpacity="0.1"
-              />
-
               <defs>
                 <linearGradient id="gradient-prod" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#6366f1" />
                   <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
                 </linearGradient>
+                <linearGradient id="gradient-dist" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f43f5e" />
+                  <stop offset="100%" stopColor="#f43f5e" stopOpacity="0" />
+                </linearGradient>
               </defs>
+
+              {/* Real time series data from API */}
+              {trendData?.weeklyTrends && trendData.weeklyTrends.length > 0 && (() => {
+                const data = trendData.weeklyTrends;
+                const maxVal = Math.max(...data.map(d => Math.max(d.productive_minutes || 0, d.distracting_minutes || 0)), 1);
+                const width = 700;
+                const height = 180;
+                const stepX = width / Math.max(data.length - 1, 1);
+
+                // Generate productive line path
+                const prodPath = data.map((d, i) => {
+                  const x = i * stepX;
+                  const y = height - ((d.productive_minutes || 0) / maxVal) * height;
+                  return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                }).join(' ');
+
+                // Generate distracted line path
+                const distPath = data.map((d, i) => {
+                  const x = i * stepX;
+                  const y = height - ((d.distracting_minutes || 0) / maxVal) * height;
+                  return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+                }).join(' ');
+
+                const areaPath = prodPath + ` L ${width} ${height} L 0 ${height} Z`;
+
+                return (
+                  <>
+                    {/* Productive area fill */}
+                    <path d={areaPath} fill="url(#gradient-prod)" fillOpacity="0.2" />
+
+                    {/* Productive line (solid) */}
+                    <path d={prodPath} fill="none" stroke="#6366f1" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_4px_10px_rgba(99,102,241,0.3)]" />
+
+                    {/* Distracted line (dashed) */}
+                    <path d={distPath} fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round" strokeDasharray="8,4" />
+
+                    {/* Data points for productive */}
+                    {data.map((d, i) => {
+                      const x = i * stepX;
+                      const y = height - ((d.productive_minutes || 0) / maxVal) * height;
+                      return <circle key={`p-${i}`} cx={x} cy={y} r="6" fill="#6366f1" stroke="#fff" strokeWidth="2" />;
+                    })}
+
+                    {/* Data points for distracted */}
+                    {data.map((d, i) => {
+                      const x = i * stepX;
+                      const y = height - ((d.distracting_minutes || 0) / maxVal) * height;
+                      return <circle key={`d-${i}`} cx={x} cy={y} r="4" fill="#f43f5e" stroke="#fff" strokeWidth="1" />;
+                    })}
+                  </>
+                );
+              })()}
             </svg>
-            <div className="flex justify-between mt-4 px-2">
-              {days.map(day => (
+            <div className="flex justify-between mt-2 px-2">
+              {trendData?.weeklyTrends?.map((d, i) => (
+                <span key={i} className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                </span>
+              )) || days.map(day => (
                 <span key={day} className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{day}</span>
               ))}
             </div>
@@ -241,9 +301,9 @@ const Analytics: React.FC = () => {
             <div className="space-y-1">
               <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest">Total Focus Time</p>
               <h4 className="text-4xl font-display font-bold">
-                {Math.floor(totalFocusTime / 60)}h {totalFocusTime % 60}m
+                {Math.floor(totalFocusTime / 60)}h {Math.round(totalFocusTime % 60)}m
               </h4>
-              <p className="text-indigo-200 text-[10px]">+5.4h vs last week</p>
+              <p className="text-indigo-200 text-[10px]">From productive apps this week</p>
             </div>
             <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
               <Target className="w-8 h-8 text-white" />

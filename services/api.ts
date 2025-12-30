@@ -224,6 +224,25 @@ export const insightsApi = {
     getWeeklyReport: async () => {
         return await apiRequest('/insights/reports/weekly');
     },
+
+    // ML Model APIs
+    getMLStatus: async () => {
+        return await apiRequest('/insights/ml/status');
+    },
+
+    trainModels: async () => {
+        return await apiRequest('/insights/ml/train', {
+            method: 'POST',
+        });
+    },
+
+    compareModels: async () => {
+        return await apiRequest('/insights/ml/compare');
+    },
+
+    getModelForecast: async (model: 'lstm' | 'arima' | 'prophet' | 'ensemble', periods: number = 7) => {
+        return await apiRequest(`/insights/ml/forecast/${model}?periods=${periods}`);
+    },
 };
 
 // ============ HEALTH CHECK ============

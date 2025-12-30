@@ -23,13 +23,20 @@ PRODUCTIVE_APPS = [
     'notion', 'obsidian', 'evernote', 'onenote', 'slack', 'teams', 'zoom',
     'figma', 'photoshop', 'illustrator', 'blender', 'unity', 'unreal',
     'excel', 'word', 'powerpoint', 'docs', 'sheets', 'slides',
-    'postman', 'insomnia', 'mongodb', 'mysql', 'postgres', 'dbeaver'
+    'postman', 'insomnia', 'mongodb', 'mysql', 'postgres', 'dbeaver',
+    'github', 'gitlab', 'bitbucket', 'stack overflow', 'stackoverflow',
+    'chatgpt', 'claude', 'gemini', 'copilot',
+    'google docs', 'google sheets', 'google slides', 'google drive',
+    'canva', 'miro', 'trello', 'asana', 'jira', 'confluence',
+    'gmail', 'outlook', 'calendar', 'linkedin'
 ]
 
 DISTRACTING_APPS = [
     'youtube', 'netflix', 'prime video', 'disney', 'twitch', 'tiktok',
     'twitter', 'facebook', 'instagram', 'reddit', 'whatsapp', 'telegram',
-    'discord', 'games', 'steam', 'epic games', 'spotify', 'vlc', 'media player'
+    'discord', 'games', 'steam', 'epic games', 'spotify', 'vlc', 'media player',
+    'snapchat', 'pinterest', 'tumblr', '9gag', 'imgur',
+    'amazon', 'ebay', 'shopping', 'flipkart'
 ]
 
 def print_banner():
@@ -74,18 +81,99 @@ def get_category_emoji(category: str) -> str:
         'neutral': '🟡'
     }.get(category, '⚪')
 
+def extract_website_from_title(title: str) -> str:
+    """Extract website/page name from browser window title"""
+    # Common browser indicators
+    browsers = ['Google Chrome', 'Mozilla Firefox', 'Microsoft Edge', 'Opera', 'Brave', 'Safari']
+    
+    # Check if it's a browser window
+    is_browser = any(browser in title for browser in browsers)
+    
+    if is_browser:
+        # Browser titles usually follow: "Page Title - Website Name - Browser"
+        # or "Page Title - Browser"
+        parts = title.split(' - ')
+        
+        if len(parts) >= 2:
+            # Remove browser name from the end if present
+            cleaned_parts = [p.strip() for p in parts if p.strip() not in browsers]
+            
+            if cleaned_parts:
+                # Check for common website indicators in each part
+                for part in cleaned_parts:
+                    part_lower = part.lower()
+                    
+                    # Check if this part contains a known website/service
+                    common_sites = {
+                        'youtube': 'YouTube',
+                        'netflix': 'Netflix',
+                        'prime video': 'Prime Video',
+                        'amazon': 'Amazon',
+                        'facebook': 'Facebook',
+                        'instagram': 'Instagram',
+                        'twitter': 'Twitter',
+                        'reddit': 'Reddit',
+                        'linkedin': 'LinkedIn',
+                        'gmail': 'Gmail',
+                        'github': 'GitHub',
+                        'stackoverflow': 'Stack Overflow',
+                        'stack overflow': 'Stack Overflow',
+                        'spotify': 'Spotify',
+                        'twitch': 'Twitch',
+                        'discord': 'Discord',
+                        'whatsapp': 'WhatsApp',
+                        'telegram': 'Telegram',
+                        'notion': 'Notion',
+                        'figma': 'Figma',
+                        'canva': 'Canva',
+                        'google docs': 'Google Docs',
+                        'google sheets': 'Google Sheets',
+                        'google slides': 'Google Slides',
+                        'google drive': 'Google Drive',
+                        'chatgpt': 'ChatGPT',
+                        'claude': 'Claude AI',
+                        'gemini': 'Google Gemini'
+                    }
+                    
+                    for keyword, site_name in common_sites.items():
+                        if keyword in part_lower:
+                            return site_name
+                
+                # If no specific site detected, use the first meaningful part
+                # This handles titles like "Some Page - Google Chrome"
+                return cleaned_parts[0] if cleaned_parts[0] else parts[0].strip()
+        
+        return title.split(' - ')[0].strip() if ' - ' in title else title
+    
+    # Not a browser, return as-is
+    return title
+
+
 def get_active_window():
     """Get the currently active window title and app name"""
     try:
         active_window = gw.getActiveWindow()
         if active_window:
             title = active_window.title
-            # Extract app name from title (usually the last part after " - ")
-            if ' - ' in title:
-                parts = title.split(' - ')
-                app_name = parts[-1].strip()
-            else:
-                app_name = title
+            
+            # Smart extraction: detect if it's a browser and extract website
+            app_name = extract_website_from_title(title)
+            
+            # If extraction didn't work well, fall back to old method
+            if not app_name or app_name == title:
+                if ' - ' in title:
+                    parts = title.split(' - ')
+                    # Try to get the most meaningful part (avoid just getting "Google Chrome")
+                    # Prefer the first part unless it's very short
+                    if len(parts[0].strip()) > 3:
+                        app_name = parts[0].strip()
+                    elif len(parts) > 1:
+                        app_name = parts[-2].strip() if len(parts) > 2 else parts[0].strip()
+                    else:
+                        app_name = parts[0].strip()
+                else:
+                    app_name = title
+            
             return {
                 'title': title,
                 'app_name': app_name

@@ -61,6 +61,52 @@ def categorize_app(app_name: str) -> str:
 def get_category_emoji(category: str) -> str:
     return {'productive': '🟢', 'distracting': '🔴', 'neutral': '🟡'}.get(category, '⚪')
 
+# Browser names to detect
+BROWSERS = ['google chrome', 'chrome', 'firefox', 'mozilla', 'edge', 'safari', 'opera', 'brave']
+
+# Keywords to detect websites from window title
+WEBSITE_KEYWORDS = {
+    'youtube': 'YouTube',
+    'netflix': 'Netflix',
+    'twitter': 'Twitter',
+    'facebook': 'Facebook',
+    'instagram': 'Instagram',
+    'reddit': 'Reddit',
+    'twitch': 'Twitch',
+    'discord': 'Discord',
+    'whatsapp': 'WhatsApp',
+    'telegram': 'Telegram',
+    'linkedin': 'LinkedIn',
+    'github': 'GitHub',
+    'stackoverflow': 'Stack Overflow',
+    'gmail': 'Gmail',
+    'outlook': 'Outlook',
+    'docs.google': 'Google Docs',
+    'sheets.google': 'Google Sheets',
+    'drive.google': 'Google Drive',
+    'notion': 'Notion',
+    'spotify': 'Spotify',
+    'amazon prime': 'Amazon Prime',
+    'hotstar': 'Hotstar',
+    'chatgpt': 'ChatGPT',
+    'claude': 'Claude AI'
+}
+
+def extract_website_from_title(title: str) -> str:
+    """Extract website name from browser window title"""
+    title_lower = title.lower()
+    
+    # Check if it's a browser window
+    is_browser = any(browser in title_lower for browser in BROWSERS)
+    
+    if is_browser or ' - ' in title:
+        # Check for known websites
+        for keyword, site_name in WEBSITE_KEYWORDS.items():
+            if keyword in title_lower:
+                return site_name
+    
+    return None
+
 def get_active_window():
     if not TRACKER_AVAILABLE:
         return None
@@ -68,6 +114,13 @@ def get_active_window():
         active_window = gw.getActiveWindow()
         if active_window:
             title = active_window.title
+            
+            # Try to extract website name first
+            website = extract_website_from_title(title)
+            if website:
+                return {'title': title, 'app_name': website}
+            
+            # Otherwise extract app name from title
             if ' - ' in title:
                 parts = title.split(' - ')
                 app_name = parts[-1].strip()
@@ -77,6 +130,7 @@ def get_active_window():
     except:
         pass
     return None
+
 
 def tracker_login(email: str, password: str) -> str:
     try:
@@ -226,7 +280,13 @@ def create_app():
     """Create and configure the Flask application"""
     app = Flask(__name__)
     app.config.from_object(Config)
-    CORS(app, origins=Config.CORS_ORIGINS, supports_credentials=True)
+    
+    # Configure CORS properly with all necessary options
+    CORS(app, 
+         origins=Config.CORS_ORIGINS, 
+         supports_credentials=True,
+         allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(tasks_bp)

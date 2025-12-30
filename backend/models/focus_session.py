@@ -79,6 +79,13 @@ class FocusSessionModel:
     
     def get_focus_stats(self, user_id: str, days: int = 7) -> dict:
         """Get focus session statistics"""
+        # Convert to ObjectId if string
+        if isinstance(user_id, str):
+            try:
+                user_id = ObjectId(user_id)
+            except:
+                pass
+        
         start_date = datetime.utcnow() - timedelta(days=days)
         
         pipeline = [

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
-export type View = 'LOGIN' | 'SIGNUP' | 'ONBOARDING' | 'DASHBOARD' | 'TASKS' | 'ANALYTICS' | 'INSIGHTS' | 'FOCUS' | 'REPORTS' | 'SETTINGS' | 'PROFILE';
+export type View = 'LOGIN' | 'SIGNUP' | 'ONBOARDING' | 'DASHBOARD' | 'TASKS' | 'ANALYTICS' | 'INSIGHTS' | 'ML_INSIGHTS' | 'FOCUS' | 'REPORTS' | 'SETTINGS' | 'PROFILE';
 
 export type ProductivityLevel = 'Low' | 'Medium' | 'High';
 export type TaskPriority = 'Low' | 'Medium' | 'High';
@@ -18,6 +18,7 @@ export interface Task {
   priority: TaskPriority;
   completed: boolean;
   progress: number;
+  is_overdue?: boolean;
 }
 
 export interface ActivityData {

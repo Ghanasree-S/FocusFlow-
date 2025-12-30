@@ -1,17 +1,46 @@
 """
-Time Series Forecasting Model
-Uses Prophet/ARIMA-style patterns for productivity forecasting
+Time Series Forecasting Ensemble
+Combines LSTM, ARIMA, and Prophet for comprehensive productivity forecasting.
+
+Model Roles:
+- LSTM: Captures complex non-linear patterns and sequential dependencies
+- ARIMA: Handles smooth trends and statistical patterns
+- Prophet: Manages seasonality and holiday effects
+
+This module provides:
+- Individual model predictions
+- Ensemble predictions (weighted average)
+- Model comparison and evaluation
 """
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 import pickle
 import os
+from typing import Dict, List, Optional
 from .data_processor import DataProcessor
+
+# Import individual forecasters
+from .lstm_forecaster import LSTMForecaster
+from .arima_forecaster import ARIMAForecaster
+
+# Prophet import with fallback
+try:
+    from prophet import Prophet
+    PROPHET_AVAILABLE = True
+except ImportError:
+    PROPHET_AVAILABLE = False
+    print("Prophet not available. Using LSTM/ARIMA only.")
+
 
 class TimeSeriesForecaster:
     """
-    Time series forecaster for productivity predictions
+    Ensemble time series forecaster for productivity predictions.
+    
+    Combines three models:
+    1. LSTM - Deep learning for complex patterns
+    2. ARIMA - Statistical modeling for trends
+    3. Prophet - Seasonality and holiday effects
     
     Predicts:
     - Next 7 days focus time
@@ -20,183 +49,133 @@ class TimeSeriesForecaster:
     """
     
     def __init__(self, model_path: str = None):
-        self.model = None
         self.data_processor = DataProcessor()
-        self.model_path = model_path or os.path.join(os.path.dirname(__file__), 'models', 'forecaster.pkl')
+        self.model_path = model_path or os.path.join(os.path.dirname(__file__), 'models')
         
-        # Try to load existing model
-        self._load_model()
+        # Initialize individual forecasters
+        self.lstm_forecaster = LSTMForecaster(
+            model_path=os.path.join(self.model_path, 'lstm_forecaster.h5')
+        )
+        self.arima_forecaster = ARIMAForecaster(
+            model_path=os.path.join(self.model_path, 'arima_forecaster.pkl')
+        )
+        
+        # Prophet model
+        self.prophet_model = None
+        self.prophet_path = os.path.join(self.model_path, 'prophet_forecaster.pkl')
+        self._load_prophet()
+        
+        # Ensemble weights (can be updated based on model performance)
+        self.weights = {
+            'lstm': 0.4,
+            'arima': 0.3,
+            'prophet': 0.3
+        }
     
-    def _load_model(self):
-        """Load trained model from disk if available"""
+    def _load_prophet(self):
+        """Load trained Prophet model if available"""
         try:
-            if os.path.exists(self.model_path):
-                with open(self.model_path, 'rb') as f:
-                    self.model = pickle.load(f)
+            if os.path.exists(self.prophet_path) and PROPHET_AVAILABLE:
+                with open(self.prophet_path, 'rb') as f:
+                    self.prophet_model = pickle.load(f)
+                print("✅ Prophet model loaded successfully")
         except Exception as e:
-            print(f"Could not load forecaster model: {e}")
-            self.model = None
+            print(f"Could not load Prophet model: {e}")
+            self.prophet_model = None
     
-    def _save_model(self):
-        """Save trained model to disk"""
+    def _save_prophet(self):
+        """Save Prophet model to disk"""
+        if self.prophet_model is None:
+            return
         try:
-            os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
-            with open(self.model_path, 'wb') as f:
-                pickle.dump(self.model, f)
+            os.makedirs(self.model_path, exist_ok=True)
+            with open(self.prophet_path, 'wb') as f:
+                pickle.dump(self.prophet_model, f)
+            print("✅ Prophet model saved successfully")
         except Exception as e:
-            print(f"Could not save forecaster model: {e}")
+            print(f"Could not save Prophet model: {e}")
     
-    def train(self, historical_data: pd.DataFrame):
+    def train_all(self, historical_data: pd.DataFrame) -> Dict:
         """
-        Train the forecasting model
+        Train all three models on historical data
         
         Args:
-            historical_data: DataFrame with columns 'ds' (datetime) and 'y' (value)
-        """
-        try:
-            from prophet import Prophet
+            historical_data: DataFrame with 'ds' (datetime) and 'y' (productive_minutes) columns
             
-            self.model = Prophet(
+        Returns:
+            Training results for each model
+        """
+        results = {}
+        
+        # Train LSTM
+        print("🔧 Training LSTM model...")
+        results['lstm'] = self.lstm_forecaster.train(historical_data)
+        
+        # Train ARIMA
+        print("🔧 Training ARIMA model...")
+        results['arima'] = self.arima_forecaster.train(historical_data)
+        
+        # Train Prophet
+        print("🔧 Training Prophet model...")
+        results['prophet'] = self._train_prophet(historical_data)
+        
+        return results
+    
+    def _train_prophet(self, historical_data: pd.DataFrame) -> Dict:
+        """Train Prophet model"""
+        if not PROPHET_AVAILABLE:
+            return {'error': 'Prophet not available', 'status': 'skipped'}
+        
+        if historical_data.empty or len(historical_data) < 10:
+            return {'error': 'Insufficient data for Prophet training'}
+        
+        try:
+            self.prophet_model = Prophet(
                 daily_seasonality=False,
                 weekly_seasonality=True,
                 yearly_seasonality=False,
                 changepoint_prior_scale=0.05
             )
             
-            self.model.fit(historical_data[['ds', 'y']])
-            self._save_model()
+            self.prophet_model.fit(historical_data[['ds', 'y']])
+            self._save_prophet()
             
-        except ImportError:
-            print("Prophet not available, using statistical fallback")
-            self.model = self._create_statistical_model(historical_data)
-    
-    def _create_statistical_model(self, data: pd.DataFrame) -> dict:
-        """Create simple statistical model as fallback"""
-        if data.empty:
             return {
-                'mean': 60,
-                'std': 20,
-                'trend': 0,
-                'weekly_pattern': [1.0] * 7
+                'status': 'success',
+                'training_samples': len(historical_data)
             }
-        
-        # Calculate basic statistics
-        mean_val = data['y'].mean()
-        std_val = data['y'].std()
-        
-        # Calculate trend (slope)
-        if len(data) > 1:
-            x = np.arange(len(data))
-            coeffs = np.polyfit(x, data['y'].values, 1)
-            trend = coeffs[0]
-        else:
-            trend = 0
-        
-        # Weekly pattern (if enough data)
-        weekly_pattern = [1.0] * 7
-        if len(data) >= 7:
-            data['dayofweek'] = data['ds'].dt.dayofweek
-            weekly_means = data.groupby('dayofweek')['y'].mean()
-            overall_mean = data['y'].mean()
-            weekly_pattern = [
-                weekly_means.get(i, overall_mean) / overall_mean if overall_mean > 0 else 1.0
-                for i in range(7)
-            ]
-        
-        return {
-            'mean': mean_val if not np.isnan(mean_val) else 60,
-            'std': std_val if not np.isnan(std_val) else 20,
-            'trend': trend if not np.isnan(trend) else 0,
-            'weekly_pattern': weekly_pattern
-        }
+        except Exception as e:
+            return {'error': str(e), 'status': 'failed'}
     
-    def forecast(self, weekly_trends: list, periods: int = 7) -> dict:
-        """
-        Forecast productivity for future days
-        
-        Args:
-            weekly_trends: Historical daily activity data
-            periods: Number of days to forecast
-            
-        Returns:
-            Dict with forecast data
-        """
-        # Prepare data
-        df = self.data_processor.prepare_timeseries_data(weekly_trends)
-        
-        # If no model or data, return rule-based forecast
-        if df.empty or len(df) < 3:
-            return self._generate_fallback_forecast(weekly_trends, periods)
+    def predict_with_lstm(self, weekly_trends: list, periods: int = 7) -> Dict:
+        """Get predictions from LSTM model only"""
+        recent_values = [t.get('productive_minutes', 60) for t in weekly_trends] if weekly_trends else []
+        return self.lstm_forecaster.predict(recent_values, periods)
+    
+    def predict_with_arima(self, weekly_trends: list, periods: int = 7) -> Dict:
+        """Get predictions from ARIMA model only"""
+        recent_values = [t.get('productive_minutes', 60) for t in weekly_trends] if weekly_trends else []
+        return self.arima_forecaster.predict(recent_values, periods)
+    
+    def predict_with_prophet(self, weekly_trends: list, periods: int = 7) -> Dict:
+        """Get predictions from Prophet model only"""
+        if not PROPHET_AVAILABLE or self.prophet_model is None:
+            return self._prophet_fallback(weekly_trends, periods)
         
         try:
-            # Try Prophet forecasting
-            if self.model is not None and hasattr(self.model, 'predict'):
-                future = self.model.make_future_dataframe(periods=periods)
-                forecast = self.model.predict(future)
-                
-                return self._format_prophet_forecast(forecast, weekly_trends, periods)
-            else:
-                # Use statistical forecasting
-                return self._statistical_forecast(df, weekly_trends, periods)
-                
+            future = self.prophet_model.make_future_dataframe(periods=periods)
+            forecast = self.prophet_model.predict(future)
+            
+            return self._format_prophet_forecast(forecast.tail(periods), periods)
         except Exception as e:
-            print(f"Forecasting failed: {e}")
-            return self._generate_fallback_forecast(weekly_trends, periods)
+            print(f"Prophet prediction failed: {e}")
+            return self._prophet_fallback(weekly_trends, periods)
     
-    def _statistical_forecast(self, df: pd.DataFrame, weekly_trends: list, periods: int) -> dict:
-        """Generate forecast using statistical methods"""
-        stats = self._create_statistical_model(df)
-        
-        # Generate forecast
-        weekly_forecast = []
-        base_date = datetime.utcnow()
-        
-        for i in range(periods):
-            future_date = base_date + timedelta(days=i + 1)
-            day_of_week = future_date.weekday()
-            
-            # Calculate predicted value
-            base_value = stats['mean'] + stats['trend'] * (len(df) + i)
-            seasonal_factor = stats['weekly_pattern'][day_of_week]
-            predicted = max(0, base_value * seasonal_factor)
-            
-            weekly_forecast.append({
-                'date': future_date.strftime('%Y-%m-%d'),
-                'day': future_date.strftime('%A'),
-                'predicted_productive_minutes': round(predicted),
-                'confidence': 0.7 - (i * 0.05)  # Confidence decreases over time
-            })
-        
-        # Calculate summary metrics
-        avg_predicted = np.mean([f['predicted_productive_minutes'] for f in weekly_forecast])
-        current_avg = df['y'].mean() if not df.empty else 60
-        
-        # Determine trend
-        if avg_predicted > current_avg * 1.1:
-            trend = 'Up'
-        elif avg_predicted < current_avg * 0.9:
-            trend = 'Down'
-        else:
-            trend = 'Stable'
-        
-        return {
-            'next_day_workload': min(100, round(weekly_forecast[0]['predicted_productive_minutes'] / 3)),
-            'completion_probability': min(95, max(50, round(70 + (avg_predicted - 60) / 5))),
-            'best_focus_window': self.data_processor.detect_best_focus_hours([]),
-            'distraction_trigger': self.data_processor.detect_distraction_triggers([]),
-            'trend': trend,
-            'weekly_forecast': weekly_forecast,
-            'load_level': self._categorize_workload(avg_predicted),
-            'stress_risk': self._calculate_stress_risk(weekly_trends)
-        }
-    
-    def _format_prophet_forecast(self, forecast: pd.DataFrame, weekly_trends: list, periods: int) -> dict:
+    def _format_prophet_forecast(self, forecast: pd.DataFrame, periods: int) -> Dict:
         """Format Prophet forecast output"""
-        recent_forecast = forecast.tail(periods)
-        
-        weekly_forecast = []
-        for _, row in recent_forecast.iterrows():
-            weekly_forecast.append({
+        predictions = []
+        for _, row in forecast.iterrows():
+            predictions.append({
                 'date': row['ds'].strftime('%Y-%m-%d'),
                 'day': row['ds'].strftime('%A'),
                 'predicted_productive_minutes': round(max(0, row['yhat'])),
@@ -205,70 +184,200 @@ class TimeSeriesForecaster:
                 'confidence': 0.8
             })
         
-        avg_predicted = np.mean([f['predicted_productive_minutes'] for f in weekly_forecast])
+        avg_pred = np.mean([p['predicted_productive_minutes'] for p in predictions])
         
         return {
-            'next_day_workload': min(100, round(weekly_forecast[0]['predicted_productive_minutes'] / 3)),
-            'completion_probability': min(95, max(50, round(70 + (avg_predicted - 60) / 5))),
-            'best_focus_window': self.data_processor.detect_best_focus_hours([]),
-            'distraction_trigger': self.data_processor.detect_distraction_triggers([]),
-            'trend': self._determine_trend(weekly_forecast),
-            'weekly_forecast': weekly_forecast,
-            'load_level': self._categorize_workload(avg_predicted),
-            'stress_risk': self._calculate_stress_risk(weekly_trends)
+            'model': 'Prophet',
+            'forecast': predictions,
+            'average_predicted': round(avg_pred),
+            'trend': self._calculate_trend([p['predicted_productive_minutes'] for p in predictions]),
+            'confidence': 0.8,
+            'periods': periods
         }
     
-    def _generate_fallback_forecast(self, weekly_trends: list, periods: int) -> dict:
-        """Generate fallback forecast when data is insufficient"""
-        # Calculate base from available data or use defaults
+    def _prophet_fallback(self, weekly_trends: list, periods: int) -> Dict:
+        """Fallback when Prophet is unavailable"""
         if weekly_trends:
-            avg_productive = np.mean([t.get('productive_minutes', 60) for t in weekly_trends])
+            mean_val = np.mean([t.get('productive_minutes', 60) for t in weekly_trends])
         else:
-            avg_productive = 60
+            mean_val = 60
         
-        weekly_forecast = []
+        predictions = []
         base_date = datetime.utcnow()
-        
-        # Day-of-week modifiers (typical work pattern)
-        day_modifiers = [1.0, 1.1, 1.1, 1.0, 0.95, 0.7, 0.6]  # Mon-Sun
         
         for i in range(periods):
             future_date = base_date + timedelta(days=i + 1)
-            day_of_week = future_date.weekday()
-            
-            predicted = avg_productive * day_modifiers[day_of_week]
-            predicted += np.random.normal(0, 10)  # Add some variance
-            
-            weekly_forecast.append({
+            predictions.append({
                 'date': future_date.strftime('%Y-%m-%d'),
                 'day': future_date.strftime('%A'),
-                'predicted_productive_minutes': round(max(0, predicted)),
-                'confidence': 0.6
+                'predicted_productive_minutes': round(mean_val),
+                'confidence': 0.5
             })
         
         return {
-            'next_day_workload': 75,
-            'completion_probability': 82,
-            'best_focus_window': '09:00 AM - 11:30 AM',
-            'distraction_trigger': 'Social Media / Morning Emails',
+            'model': 'Prophet (fallback)',
+            'forecast': predictions,
+            'average_predicted': round(mean_val),
             'trend': 'Stable',
-            'weekly_forecast': weekly_forecast,
-            'load_level': 'Medium',
-            'stress_risk': 'Low'
+            'confidence': 0.5,
+            'periods': periods
         }
     
-    def _determine_trend(self, weekly_forecast: list) -> str:
-        """Determine overall trend from forecast"""
-        if len(weekly_forecast) < 2:
+    def forecast(self, weekly_trends: list, periods: int = 7) -> Dict:
+        """
+        Generate ensemble forecast combining all models
+        
+        Args:
+            weekly_trends: Historical daily activity data
+            periods: Number of days to forecast
+            
+        Returns:
+            Comprehensive forecast with all model predictions and ensemble
+        """
+        # Prepare data
+        df = self.data_processor.prepare_timeseries_data(weekly_trends)
+        
+        # Get individual model predictions
+        lstm_pred = self.predict_with_lstm(weekly_trends, periods)
+        arima_pred = self.predict_with_arima(weekly_trends, periods)
+        prophet_pred = self.predict_with_prophet(weekly_trends, periods)
+        
+        # Calculate ensemble prediction (weighted average)
+        ensemble_forecast = self._create_ensemble_forecast(
+            lstm_pred, arima_pred, prophet_pred, periods
+        )
+        
+        # Calculate summary metrics
+        avg_predicted = ensemble_forecast['average_predicted']
+        current_avg = df['y'].mean() if not df.empty else 60
+        
+        # Determine trend
+        trend = ensemble_forecast['trend']
+        
+        return {
+            # Primary forecast (ensemble)
+            'next_day_workload': min(100, round(ensemble_forecast['forecast'][0]['predicted_productive_minutes'] / 3)),
+            'completion_probability': min(95, max(50, round(70 + (avg_predicted - 60) / 5))),
+            'best_focus_window': self.data_processor.detect_best_focus_hours([]),
+            'distraction_trigger': self.data_processor.detect_distraction_triggers([]),
+            'trend': trend,
+            'weekly_forecast': ensemble_forecast['forecast'],
+            'load_level': self._categorize_workload(avg_predicted),
+            'stress_risk': self._calculate_stress_risk(weekly_trends),
+            
+            # Individual model results
+            'model_predictions': {
+                'lstm': lstm_pred,
+                'arima': arima_pred,
+                'prophet': prophet_pred,
+                'ensemble': ensemble_forecast
+            },
+            
+            # Model comparison
+            'model_weights': self.weights,
+            'ensemble_method': 'weighted_average'
+        }
+    
+    def _create_ensemble_forecast(self, lstm: Dict, arima: Dict, prophet: Dict, periods: int) -> Dict:
+        """Create weighted ensemble forecast from individual models"""
+        base_date = datetime.utcnow()
+        ensemble = []
+        
+        for i in range(periods):
+            # Get predictions from each model
+            lstm_val = lstm['forecast'][i]['predicted_productive_minutes'] if i < len(lstm.get('forecast', [])) else 60
+            arima_val = arima['forecast'][i]['predicted_productive_minutes'] if i < len(arima.get('forecast', [])) else 60
+            prophet_val = prophet['forecast'][i]['predicted_productive_minutes'] if i < len(prophet.get('forecast', [])) else 60
+            
+            # Weighted average
+            ensemble_val = (
+                lstm_val * self.weights['lstm'] +
+                arima_val * self.weights['arima'] +
+                prophet_val * self.weights['prophet']
+            )
+            
+            future_date = base_date + timedelta(days=i + 1)
+            ensemble.append({
+                'date': future_date.strftime('%Y-%m-%d'),
+                'day': future_date.strftime('%A'),
+                'predicted_productive_minutes': round(ensemble_val),
+                'lstm_prediction': lstm_val,
+                'arima_prediction': arima_val,
+                'prophet_prediction': prophet_val,
+                'confidence': round(0.85 - (i * 0.02), 2)
+            })
+        
+        avg_predicted = np.mean([e['predicted_productive_minutes'] for e in ensemble])
+        
+        return {
+            'model': 'Ensemble (LSTM + ARIMA + Prophet)',
+            'forecast': ensemble,
+            'average_predicted': round(avg_predicted),
+            'trend': self._calculate_trend([e['predicted_productive_minutes'] for e in ensemble]),
+            'confidence': 0.85,
+            'periods': periods
+        }
+    
+    def compare_models(self, test_data: pd.DataFrame) -> Dict:
+        """
+        Compare performance of all models on test data
+        
+        Returns:
+            Comparison metrics for each model
+        """
+        results = {
+            'lstm': self.lstm_forecaster.evaluate(test_data),
+            'arima': self.arima_forecaster.evaluate(test_data),
+            'prophet': self._evaluate_prophet(test_data)
+        }
+        
+        # Determine best model
+        valid_results = {k: v for k, v in results.items() if 'error' not in v}
+        if valid_results:
+            best_model = min(valid_results, key=lambda k: valid_results[k].get('mae', float('inf')))
+            results['best_model'] = best_model
+            results['recommendation'] = f"Based on MAE, {best_model.upper()} performs best for this data"
+        
+        return results
+    
+    def _evaluate_prophet(self, test_data: pd.DataFrame) -> Dict:
+        """Evaluate Prophet model performance"""
+        if not PROPHET_AVAILABLE or self.prophet_model is None:
+            return {'error': 'Prophet not available or not trained'}
+        
+        try:
+            # Make predictions
+            future = self.prophet_model.make_future_dataframe(periods=len(test_data))
+            forecast = self.prophet_model.predict(future)
+            
+            y_pred = forecast.tail(len(test_data))['yhat'].values
+            y_true = test_data['y'].values
+            
+            # Calculate metrics
+            mae = np.mean(np.abs(y_true - y_pred))
+            rmse = np.sqrt(np.mean((y_true - y_pred) ** 2))
+            mape = np.mean(np.abs((y_true - y_pred) / (y_true + 1e-8))) * 100
+            
+            return {
+                'mae': round(float(mae), 2),
+                'rmse': round(float(rmse), 2),
+                'mape': round(float(mape), 2),
+                'samples_evaluated': len(y_true)
+            }
+        except Exception as e:
+            return {'error': str(e)}
+    
+    def _calculate_trend(self, values: list) -> str:
+        """Calculate trend direction from values"""
+        if len(values) < 2:
             return 'Stable'
         
-        values = [f['predicted_productive_minutes'] for f in weekly_forecast]
-        first_half_avg = np.mean(values[:len(values)//2])
-        second_half_avg = np.mean(values[len(values)//2:])
+        first_half = np.mean(values[:len(values)//2])
+        second_half = np.mean(values[len(values)//2:])
         
-        if second_half_avg > first_half_avg * 1.1:
+        if second_half > first_half * 1.1:
             return 'Up'
-        elif second_half_avg < first_half_avg * 0.9:
+        elif second_half < first_half * 0.9:
             return 'Down'
         return 'Stable'
     
@@ -286,7 +395,6 @@ class TimeSeriesForecaster:
         if not weekly_trends:
             return 'Low'
         
-        # High distraction combined with high workload = stress
         total_distraction = sum(t.get('distracting_minutes', 0) for t in weekly_trends)
         total_productive = sum(t.get('productive_minutes', 0) for t in weekly_trends)
         
@@ -297,3 +405,23 @@ class TimeSeriesForecaster:
         elif distraction_ratio > 0.25:
             return 'Medium'
         return 'Low'
+    
+    def get_model_status(self) -> Dict:
+        """Get status of all models"""
+        return {
+            'lstm': {
+                'available': True,
+                'trained': self.lstm_forecaster.is_trained,
+                'sequence_length': self.lstm_forecaster.sequence_length
+            },
+            'arima': {
+                'available': True,
+                'trained': self.arima_forecaster.is_trained,
+                'order': self.arima_forecaster.order
+            },
+            'prophet': {
+                'available': PROPHET_AVAILABLE,
+                'trained': self.prophet_model is not None
+            },
+            'weights': self.weights
+        }

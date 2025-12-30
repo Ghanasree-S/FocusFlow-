@@ -1,7 +1,7 @@
 """
 Task Model and Operations
 """
-from datetime import datetime
+from datetime import datetime, date
 from bson import ObjectId
 
 class TaskModel:
@@ -12,6 +12,18 @@ class TaskModel:
     
     def __init__(self, db):
         self.collection = db.tasks
+    
+    def _is_overdue(self, deadline_str: str, completed: bool) -> bool:
+        """Check if a task is overdue (deadline passed and not completed)"""
+        if completed or not deadline_str:
+            return False
+        try:
+            # Parse the deadline date (format: YYYY-MM-DD)
+            deadline_date = datetime.strptime(deadline_str, '%Y-%m-%d').date()
+            today = date.today()
+            return deadline_date < today
+        except (ValueError, TypeError):
+            return False
     
     def create_task(self, user_id: str, title: str, deadline: str, category: str, priority: str) -> dict:
         """Create a new task"""
@@ -82,7 +94,7 @@ class TaskModel:
         return result.deleted_count > 0
     
     def get_task_stats(self, user_id: str) -> dict:
-        """Get task statistics for a user"""
+        """Get task statistics for a user, including overdue tasks"""
         pipeline = [
             {'$match': {'user_id': user_id}},
             {'$group': {
@@ -95,28 +107,43 @@ class TaskModel:
         ]
         
         result = list(self.collection.aggregate(pipeline))
+        
+        # Count overdue tasks (deadline passed with completed=false)
+        tasks = list(self.collection.find({'user_id': user_id}))
+        overdue_count = sum(
+            1 for t in tasks 
+            if self._is_overdue(t.get('deadline', ''), t.get('completed', False))
+        )
+        
         if result:
             stats = result[0]
             return {
                 'total': stats['total'],
                 'completed': stats['completed'],
                 'pending': stats['total'] - stats['completed'],
+                'overdue': overdue_count,
                 'high_priority': stats['high_priority'],
                 'avg_progress': round(stats['avg_progress'] or 0, 1)
             }
-        return {'total': 0, 'completed': 0, 'pending': 0, 'high_priority': 0, 'avg_progress': 0}
+        return {'total': 0, 'completed': 0, 'pending': 0, 'overdue': 0, 'high_priority': 0, 'avg_progress': 0}
     
     def _serialize(self, task: dict) -> dict:
         """Serialize task for API response"""
         if not task:
             return None
+        
+        deadline = task.get('deadline', '')
+        completed = task.get('completed', False)
+        is_overdue = self._is_overdue(deadline, completed)
+        
         return {
             'id': str(task['_id']),
             'title': task['title'],
-            'deadline': task['deadline'],
+            'deadline': deadline,
             'category': task['category'],
             'priority': task['priority'],
-            'completed': task['completed'],
+            'completed': completed,
             'progress': task['progress'],
+            'is_overdue': is_overdue,
             'created_at': task.get('created_at', datetime.utcnow()).isoformat()
         }
