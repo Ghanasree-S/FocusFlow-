@@ -18,16 +18,23 @@ from typing import List, Dict, Tuple, Optional, Any
 # TensorFlow/Keras imports with fallback
 try:
     import tensorflow as tf
-    from tensorflow.keras.models import Sequential, load_model
-    from tensorflow.keras.layers import LSTM, Dense, Dropout
-    from tensorflow.keras.callbacks import EarlyStopping
+    # Try Keras 3 first (standalone), then fallback to tf.keras
+    try:
+        from keras.models import Sequential
+        from keras.layers import LSTM, Dense, Dropout
+        from keras.callbacks import EarlyStopping
+        from keras.saving import load_model
+    except ImportError:
+        from tensorflow.keras.models import Sequential, load_model
+        from tensorflow.keras.layers import LSTM, Dense, Dropout
+        from tensorflow.keras.callbacks import EarlyStopping
     from sklearn.preprocessing import MinMaxScaler
     KERAS_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     KERAS_AVAILABLE = False
     Sequential = None  # Define as None for type hints
     MinMaxScaler = None
-    print("TensorFlow/Keras not available. LSTM forecaster will use fallback mode.")
+    print(f"TensorFlow/Keras not available. LSTM forecaster will use fallback mode. Error: {e}")
 
 
 class LSTMForecaster:
@@ -57,7 +64,7 @@ class LSTMForecaster:
         self.scaler = MinMaxScaler() if KERAS_AVAILABLE else None
         self.sequence_length = sequence_length
         self.model_path = model_path or os.path.join(
-            os.path.dirname(__file__), 'models', 'lstm_forecaster.h5'
+            os.path.dirname(__file__), 'saved_models', 'lstm_forecaster.h5'
         )
         self.scaler_path = self.model_path.replace('.h5', '_scaler.pkl')
         self.is_trained = False
@@ -74,7 +81,7 @@ class LSTMForecaster:
             if os.path.exists(self.model_path):
                 self.model = load_model(self.model_path)
                 self.is_trained = True
-                print("✅ LSTM model loaded successfully")
+                print("[OK] LSTM model loaded successfully")
                 
             if os.path.exists(self.scaler_path):
                 with open(self.scaler_path, 'rb') as f:
@@ -95,7 +102,7 @@ class LSTMForecaster:
             
             with open(self.scaler_path, 'wb') as f:
                 pickle.dump(self.scaler, f)
-            print("✅ LSTM model saved successfully")
+            print("[OK] LSTM model saved successfully")
         except Exception as e:
             print(f"Could not save LSTM model: {e}")
     

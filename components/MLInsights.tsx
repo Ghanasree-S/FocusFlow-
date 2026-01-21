@@ -10,6 +10,7 @@ import { insightsApi } from '../services/api';
 import {
     Brain,
     TrendingUp,
+    TrendingDown,
     BarChart3,
     Activity,
     Cpu,
@@ -19,7 +20,14 @@ import {
     Clock,
     Zap,
     Target,
-    LineChart
+    LineChart,
+    Sparkles,
+    Timer,
+    ShieldAlert,
+    Lightbulb,
+    Minus,
+    ChevronRight,
+    BrainCircuit
 } from 'lucide-react';
 
 interface ModelPrediction {
@@ -52,6 +60,24 @@ interface ModelStatus {
     order?: number[];
 }
 
+interface ForecastData {
+    productivityLevel: string;
+    nextDayWorkload: number;
+    completionProbability: number;
+    bestFocusWindow: string;
+    distractionTrigger: string;
+    trend: 'Up' | 'Down' | 'Stable';
+    expectedLoadLevel: string;
+    stressRisk: string;
+}
+
+interface Pattern {
+    type: string;
+    title: string;
+    description: string;
+    icon: string;
+}
+
 const MLInsights: React.FC = () => {
     const [models, setModels] = useState<{
         lstm: ModelInfo | null;
@@ -63,6 +89,8 @@ const MLInsights: React.FC = () => {
         arima: ModelStatus;
         prophet: ModelStatus;
     } | null>(null);
+    const [forecast, setForecast] = useState<ForecastData | null>(null);
+    const [patterns, setPatterns] = useState<Pattern[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isTraining, setIsTraining] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -83,18 +111,46 @@ const MLInsights: React.FC = () => {
         setError(null);
 
         try {
-            const statusResponse = await insightsApi.getMLStatus();
-            setModelStatus(statusResponse.forecaster);
+            // Fetch all data in parallel
+            const [realtimeResponse, forecastData, patternsData] = await Promise.all([
+                insightsApi.getRealtimePredictions().catch(() => null),
+                insightsApi.getForecast().catch(() => null),
+                insightsApi.getBehavioralPatterns().catch(() => ({ patterns: [] }))
+            ]);
 
-            const compareResponse = await insightsApi.compareModels();
-            setModels({
-                lstm: compareResponse.models?.lstm || null,
-                arima: compareResponse.models?.arima || null,
-                prophet: compareResponse.models?.prophet || null,
-            });
+            // Set forecast and patterns
+            if (forecastData) setForecast(forecastData);
+            if (patternsData?.patterns) setPatterns(patternsData.patterns);
+
+            if (realtimeResponse?.status === 'success' && realtimeResponse.models) {
+                setModels({
+                    lstm: realtimeResponse.models.lstm,
+                    arima: realtimeResponse.models.arima,
+                    prophet: realtimeResponse.models.prophet,
+                });
+                setModelStatus(realtimeResponse);
+            } else {
+                // Fallback to compare models if realtime not available
+                const compareResponse = await insightsApi.compareModels();
+                setModels({
+                    lstm: compareResponse.models?.lstm || null,
+                    arima: compareResponse.models?.arima || null,
+                    prophet: compareResponse.models?.prophet || null,
+                });
+            }
         } catch (err: any) {
-            setError(err.message || 'Failed to fetch ML data');
             console.error('ML fetch error:', err);
+            // Try fallback without error
+            try {
+                const compareResponse = await insightsApi.compareModels();
+                setModels({
+                    lstm: compareResponse.models?.lstm || null,
+                    arima: compareResponse.models?.arima || null,
+                    prophet: compareResponse.models?.prophet || null,
+                });
+            } catch {
+                setError('Insufficient data for ML predictions');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -234,6 +290,87 @@ const MLInsights: React.FC = () => {
                 <div className="p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl flex items-center gap-3">
                     <AlertCircle className="w-5 h-5 text-rose-500" />
                     <p className="text-rose-700 dark:text-rose-400">{error}</p>
+                </div>
+            )}
+
+            {/* Predictive Analytics Summary */}
+            {forecast && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Core Prediction Card */}
+                    <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl shadow-indigo-600/30">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                        <div className="relative z-10 flex flex-col h-full">
+                            <div className="flex justify-between items-start mb-8">
+                                <span className="text-xs font-bold uppercase tracking-[0.2em] bg-white/20 px-3 py-1 rounded-full backdrop-blur-md">
+                                    24H Forecasting
+                                </span>
+                                <Sparkles className="w-6 h-6 text-yellow-300 animate-pulse" />
+                            </div>
+
+                            <div className="mb-auto">
+                                <p className="text-white/70 text-sm font-medium mb-1">Tomorrow's Productivity Forecast</p>
+                                <h3 className="text-4xl font-display font-bold mb-4">{forecast.productivityLevel} Output</h3>
+                                <div className="flex items-center gap-2 text-indigo-100 font-semibold">
+                                    {forecast.trend === 'Up' ? <TrendingUp className="w-5 h-5" /> :
+                                        forecast.trend === 'Down' ? <TrendingDown className="w-5 h-5" /> :
+                                            <Minus className="w-5 h-5" />}
+                                    <span>{forecast.completionProbability}% Prob. Task Completion</span>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-white/10">
+                                <div>
+                                    <p className="text-white/60 text-[10px] uppercase font-bold tracking-widest mb-1">Expected Load</p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2 w-16 bg-white/20 rounded-full overflow-hidden">
+                                            <div className="h-full bg-white" style={{ width: `${forecast.nextDayWorkload}%` }}></div>
+                                        </div>
+                                        <span className="text-xs font-bold">{forecast.expectedLoadLevel}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-white/60 text-[10px] uppercase font-bold tracking-widest mb-1">Stress Risk</p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2 w-16 bg-white/20 rounded-full overflow-hidden">
+                                            <div className={`h-full ${forecast.stressRisk === 'Low' ? 'bg-emerald-400 w-1/4' : forecast.stressRisk === 'Medium' ? 'bg-amber-400 w-1/2' : 'bg-rose-400 w-3/4'}`}></div>
+                                        </div>
+                                        <span className="text-xs font-bold">{forecast.stressRisk}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Focus Window Card */}
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-12 h-12 bg-amber-50 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500">
+                                <Timer className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h4 className="font-display font-bold text-slate-900 dark:text-white">Peak Focus Window</h4>
+                                <p className="text-xs text-slate-500">Based on Time-Series analysis</p>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 flex flex-col justify-center text-center py-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+                            <p className="text-2xl font-display font-bold text-slate-800 dark:text-slate-100 mb-2">
+                                {forecast.bestFocusWindow}
+                            </p>
+                            <p className="text-xs font-bold text-amber-600 uppercase tracking-widest">Optimal Cognitive state</p>
+                        </div>
+
+                        <div className="mt-6 space-y-3">
+                            <div className="flex items-center gap-3">
+                                <Zap className="w-5 h-5 text-indigo-500" />
+                                <p className="text-sm text-slate-600 dark:text-slate-400">Next 7 days show a <span className="text-indigo-600 dark:text-indigo-400 font-bold">{forecast.trend?.toLowerCase()} trend</span> in focus duration.</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <ShieldAlert className="w-5 h-5 text-rose-500" />
+                                <p className="text-sm text-slate-600 dark:text-slate-400">Main distraction: <span className="font-bold">{forecast.distractionTrigger}</span>.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -447,6 +584,7 @@ const MLInsights: React.FC = () => {
                             className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 hover:shadow-lg transition-all"
                         >
                             <div className="flex items-start justify-between mb-4">
+                                {/* eslint-disable-next-line react/no-unknown-property */}
                                 <div className="p-3 rounded-xl" style={{ backgroundColor: colors.light }}>
                                     {modelKey === 'lstm' && <Brain className="w-5 h-5" style={{ color: colors.main }} />}
                                     {modelKey === 'arima' && <BarChart3 className="w-5 h-5" style={{ color: colors.main }} />}
@@ -499,6 +637,7 @@ const MLInsights: React.FC = () => {
                                         </span>
                                     </div>
                                     <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full mt-1 overflow-hidden">
+                                        {/* eslint-disable-next-line react/no-unknown-property */}
                                         <div
                                             className="h-full rounded-full transition-all"
                                             style={{
@@ -570,6 +709,38 @@ const MLInsights: React.FC = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Behavioral Patterns */}
+            {patterns.length > 0 && (
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8">
+                    <h3 className="font-display font-bold text-lg text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                        <BrainCircuit className="w-5 h-5 text-indigo-500" />
+                        Behavioral Patterns Detected
+                    </h3>
+                    <div className="space-y-4">
+                        {patterns.map((pattern, index) => (
+                            <div key={index} className="group flex items-center gap-6 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-default border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
+                                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
+                                    {pattern.icon === 'Lightbulb' && <Lightbulb className="w-5 h-5 text-yellow-500" />}
+                                    {pattern.icon === 'Timer' && <Timer className="w-5 h-5 text-indigo-500" />}
+                                    {pattern.icon === 'ShieldAlert' && <ShieldAlert className="w-5 h-5 text-rose-500" />}
+                                    {!['Lightbulb', 'Timer', 'ShieldAlert'].includes(pattern.icon) && <Lightbulb className="w-5 h-5 text-yellow-500" />}
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h5 className="font-bold text-slate-800 dark:text-slate-200">{pattern.title}</h5>
+                                        <span className={`text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-md ${pattern.type === 'Warning' ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/20' : 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20'}`}>
+                                            {pattern.type}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">{pattern.description}</p>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Model Info */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

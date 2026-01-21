@@ -22,6 +22,8 @@ interface TrendData {
 
 const Analytics: React.FC = () => {
   const [trendData, setTrendData] = useState<TrendData | null>(null);
+  const [focusWindows, setFocusWindows] = useState<any | null>(null);
+  const [distractions, setDistractions] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -30,12 +32,16 @@ const Analytics: React.FC = () => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const data = await insightsApi.getTrends(7);
-        setTrendData(data);
+        const [trendsData, windowsData, distractionsData] = await Promise.all([
+          insightsApi.getTrends(7),
+          insightsApi.getFocusWindows(),
+          insightsApi.getDistractionPatterns()
+        ]);
+        setTrendData(trendsData);
+        setFocusWindows(windowsData);
+        setDistractions(distractionsData);
       } catch (error) {
         console.error('Failed to fetch analytics:', error);
-        // Use fallback data
-        setTrendData(null);
       } finally {
         setIsLoading(false);
       }
@@ -118,6 +124,7 @@ const Analytics: React.FC = () => {
               <span className="text-xs text-slate-500">Productive (min)</span>
             </div>
             <div className="flex items-center gap-2">
+              {/* eslint-disable-next-line jsx-a11y/no-unknown-property */}
               <div className="w-4 h-0.5 bg-rose-500 rounded" style={{ borderTop: '2px dashed #f43f5e' }}></div>
               <span className="text-xs text-slate-500">Distracted (min)</span>
             </div>
@@ -246,34 +253,51 @@ const Analytics: React.FC = () => {
               Distraction Patterns
             </h3>
             <div className="flex gap-1">
+              {/* eslint-disable-next-line jsx-a11y/no-unknown-property */}
               {[1, 2, 3, 4].map(v => <div key={v} className={`w-3 h-3 rounded-sm bg-rose-500`} style={{ opacity: v * 0.25 }} />)}
             </div>
           </div>
 
-          <div className="grid grid-cols-9 gap-2">
-            <div className="col-span-1"></div>
-            {hours.map(h => <div key={h} className="text-[9px] font-bold text-slate-400 uppercase text-center">{h}</div>)}
-
-            {days.map((day, dayIndex) => (
-              <React.Fragment key={day}>
-                <div className="text-[9px] font-bold text-slate-400 uppercase py-2">{day}</div>
-                {hours.map((h, hourIndex) => {
-                  // Use seeded random for consistent display
-                  const intensity = (dayIndex + hourIndex) % 5;
+          {distractions && distractions.peak_hours && distractions.peak_hours.length > 0 ? (
+            <div>
+              <div className="mb-6 space-y-3">
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Peak Distraction Hours (Last 7 Days)</p>
+                {distractions.peak_hours.map((peak: any, idx: number) => {
+                  const maxDist = Math.max(...distractions.peak_hours.map((p: any) => p.distracted || 0), 1);
+                  const width = (peak.distracted / maxDist) * 100;
                   return (
-                    <div
-                      key={h}
-                      className={`h-8 rounded-md transition-all duration-500 ${intensity === 0 ? 'bg-slate-50 dark:bg-slate-800/50' :
-                        intensity === 1 ? 'bg-rose-500/10' :
-                          intensity === 2 ? 'bg-rose-500/30' :
-                            intensity === 3 ? 'bg-rose-500/60' : 'bg-rose-500'
-                        }`}
-                    />
+                    <div key={idx} className="space-y-1">
+                      <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
+                        <span className="font-semibold">{peak.time}</span>
+                        <span>{peak.distracted}m</span>
+                      </div>
+                      <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        {/* eslint-disable-next-line jsx-a11y/no-unknown-property */}
+                        <div className="h-full bg-rose-500" style={{ width: `${width}%` }}></div>
+                      </div>
+                    </div>
                   );
                 })}
-              </React.Fragment>
-            ))}
-          </div>
+              </div>
+              {distractions.top_distractions && distractions.top_distractions.length > 0 && (
+                <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Top Distracting Apps</p>
+                  <div className="space-y-2">
+                    {distractions.top_distractions.map((app: any, idx: number) => (
+                      <div key={idx} className="flex justify-between items-center text-xs">
+                        <span className="text-slate-600 dark:text-slate-400">{app.app_name}</span>
+                        <span className="font-bold text-rose-500">{app.total_minutes}m • {app.sessions} sessions</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-slate-500">
+              <p className="text-sm">No distraction data yet. Keep tracking to analyze patterns.</p>
+            </div>
+          )}
         </div>
 
         {/* Top Productive Hours & Total Focus */}
@@ -289,10 +313,10 @@ const Analytics: React.FC = () => {
               </div>
             </div>
             <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl text-center">
-              <span className="text-3xl font-display font-bold text-indigo-600 dark:text-indigo-400 tracking-tight">09:00 AM — 11:30 AM</span>
+              <span className="text-3xl font-display font-bold text-indigo-600 dark:text-indigo-400 tracking-tight">{focusWindows?.bestWindow?.time || 'No data'}</span>
               <div className="flex items-center justify-center gap-2 mt-2 text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
                 <TrendingUp className="w-3 h-3" />
-                94% Focus Efficiency
+                {Math.round(focusWindows?.bestWindow?.focus_ratio || 0)}% Focus Efficiency
               </div>
             </div>
           </div>

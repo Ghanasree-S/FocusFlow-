@@ -179,10 +179,10 @@ const ReportListItem = ({ title, date, type }: any) => (
       </div>
     </div>
     <div className="flex items-center gap-2">
-      <button className="p-2 text-slate-400 hover:text-indigo-500 transition-colors">
+      <button title="Share report" aria-label="Share report" className="p-2 text-slate-400 hover:text-indigo-500 transition-colors">
         <Share2 className="w-5 h-5" />
       </button>
-      <button className="p-2 text-slate-400 hover:text-indigo-500 transition-colors">
+      <button title="Download report" aria-label="Download report" className="p-2 text-slate-400 hover:text-indigo-500 transition-colors">
         <Download className="w-5 h-5" />
       </button>
     </div>

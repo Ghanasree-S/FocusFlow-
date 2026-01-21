@@ -50,7 +50,7 @@ class TimeSeriesForecaster:
     
     def __init__(self, model_path: str = None):
         self.data_processor = DataProcessor()
-        self.model_path = model_path or os.path.join(os.path.dirname(__file__), 'models')
+        self.model_path = model_path or os.path.join(os.path.dirname(__file__), 'saved_models')
         
         # Initialize individual forecasters
         self.lstm_forecaster = LSTMForecaster(
@@ -78,7 +78,7 @@ class TimeSeriesForecaster:
             if os.path.exists(self.prophet_path) and PROPHET_AVAILABLE:
                 with open(self.prophet_path, 'rb') as f:
                     self.prophet_model = pickle.load(f)
-                print("✅ Prophet model loaded successfully")
+                print("[OK] Prophet model loaded successfully")
         except Exception as e:
             print(f"Could not load Prophet model: {e}")
             self.prophet_model = None
@@ -91,7 +91,7 @@ class TimeSeriesForecaster:
             os.makedirs(self.model_path, exist_ok=True)
             with open(self.prophet_path, 'wb') as f:
                 pickle.dump(self.prophet_model, f)
-            print("✅ Prophet model saved successfully")
+            print("[OK] Prophet model saved successfully")
         except Exception as e:
             print(f"Could not save Prophet model: {e}")
     

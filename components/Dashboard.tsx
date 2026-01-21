@@ -209,7 +209,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-display font-bold text-slate-900 dark:text-white">Active Tasks</h3>
-            <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-indigo-600 transition-colors">
+            <button title="Add new task" aria-label="Add new task" className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-indigo-600 transition-colors">
               <Plus className="w-5 h-5" />
             </button>
           </div>
@@ -225,7 +225,8 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
                 </div>
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2 truncate">{task.title}</p>
                 <div className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div
+                  {/* eslint-disable-next-line jsx-a11y/no-unknown-property, react/no-unknown-property */}
+              <div
                     className="h-full bg-indigo-500 transition-all duration-1000"
                     style={{ width: `${task.progress}%` }}
                   ></div>

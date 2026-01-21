@@ -9,7 +9,6 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import TaskManager from './components/TaskManager';
 import Analytics from './components/Analytics';
-import Insights from './components/Insights';
 import MLInsights from './components/MLInsights';
 import FocusMode from './components/FocusMode';
 import Reports from './components/Reports';
@@ -96,7 +95,6 @@ const App: React.FC = () => {
       case 'ANALYTICS':
         return <Analytics />;
       case 'INSIGHTS':
-        return <Insights />;
       case 'ML_INSIGHTS':
         return <MLInsights />;
       case 'FOCUS':

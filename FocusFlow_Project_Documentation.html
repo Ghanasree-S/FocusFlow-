@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocusFlow - Project Documentation for Presentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --darker: #020617;
+            --light: #f8fafc;
+            --gray: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--darker) 0%, #1e1b4b 50%, var(--dark) 100%);
+            color: #e2e8f0;
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 80px 30px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 24px;
+            margin-bottom: 50px;
+            box-shadow: 0 25px 80px rgba(99, 102, 241, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            text-shadow: 2px 4px 8px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .tagline {
+            font-size: 1.4rem;
+            opacity: 0.95;
+            font-weight: 400;
+            position: relative;
+        }
+
+        .subtitle {
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50px;
+            display: inline-block;
+            font-weight: 500;
+            position: relative;
+        }
+
+        /* Navigation */
+        .nav-sticky {
+            position: sticky;
+            top: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 16px 24px;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            z-index: 100;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .nav-sticky a {
+            color: #94a3b8;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .nav-sticky a:hover {
+            color: white;
+            background: var(--primary);
+        }
+
+        /* Sections */
+        .section {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        h2 {
+            color: var(--primary);
+            font-size: 2rem;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h2::before {
+            content: '';
+            width: 5px;
+            height: 32px;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+        }
+
+        h3 {
+            color: var(--secondary);
+            font-size: 1.3rem;
+            margin: 28px 0 16px 0;
+        }
+
+        h4 {
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin: 20px 0 12px 0;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: #cbd5e1;
+        }
+
+        ul,
+        ol {
+            margin: 16px 0 16px 28px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            color: #94a3b8;
+        }
+
+        li strong {
+            color: #e2e8f0;
+        }
+
+        /* Highlight Box */
+        .highlight {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+            padding: 24px;
+            border-radius: 16px;
+            border-left: 4px solid var(--primary);
+            margin: 24px 0;
+        }
+
+        .highlight-success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.1));
+            border-left-color: var(--success);
+        }
+
+        .highlight-warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(239, 68, 68, 0.1));
+            border-left-color: var(--warning);
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        th {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #0c0a1d;
+            padding: 24px;
+            border-radius: 12px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .code-block code {
+            color: #a5b4fc;
+        }
+
+        .code-keyword {
+            color: #c084fc;
+        }
+
+        .code-string {
+            color: #34d399;
+        }
+
+        .code-comment {
+            color: #64748b;
+        }
+
+        .code-number {
+            color: #fbbf24;
+        }
+
+        /* Model Cards */
+        .model-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+            padding: 28px;
+            border-radius: 16px;
+            margin: 24px 0;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .model-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+        }
+
+        .model-card h4 {
+            color: white;
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .badge-purple {
+            background: rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+        }
+
+        .badge-blue {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        .badge-green {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .badge-orange {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+        }
+
+        .badge-cyan {
+            background: rgba(6, 182, 212, 0.2);
+            color: #22d3ee;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin: 28px 0;
+        }
+
+        .metric-box {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 24px;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .metric-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.2);
+        }
+
+        .metric-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .metric-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        /* Architecture Diagram */
+        .architecture-diagram {
+            background: linear-gradient(180deg, #0c0a1d 0%, #1a1635 100%);
+            padding: 40px;
+            border-radius: 20px;
+            margin: 32px 0;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            overflow-x: auto;
+        }
+
+        .arch-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .arch-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.2));
+            padding: 16px 28px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid var(--primary);
+            min-width: 140px;
+            font-weight: 600;
+        }
+
+        .arch-box.frontend {
+            border-color: #60a5fa;
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        .arch-box.backend {
+            border-color: #34d399;
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        .arch-box.ml {
+            border-color: #a78bfa;
+            background: rgba(139, 92, 246, 0.2);
+        }
+
+        .arch-box.db {
+            border-color: #fbbf24;
+            background: rgba(245, 158, 11, 0.2);
+        }
+
+        .arch-box.tracker {
+            border-color: #22d3ee;
+            background: rgba(6, 182, 212, 0.2);
+        }
+
+        .arch-arrow {
+            font-size: 1.5rem;
+            color: var(--gray);
+        }
+
+        .arch-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .arch-section-title {
+            text-align: center;
+            color: var(--gray);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 24px 0 12px 0;
+        }
+
+        /* Flow Diagram */
+        .flow-diagram {
+            background: #0c0a1d;
+            padding: 30px;
+            border-radius: 16px;
+            font-family: 'Fira Code', monospace;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #a5b4fc;
+            margin: 24px 0;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin: 28px 0;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 28px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+        }
+
+        .feature-card h4 {
+            color: white;
+            margin-bottom: 12px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 50px;
+            color: #64748b;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            margin-top: 60px;
+        }
+
+        footer .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+
+            .section {
+                border: 1px solid #ddd;
+            }
+
+            .nav-sticky {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 FocusFlow</h1>
+            <p class="tagline">AI-Powered Productivity Tracking & Prediction System</p>
+            <div class="subtitle">📚 Complete Project Documentation for Presentation</div>
+        </header>
+
+        <nav class="nav-sticky">
+            <a href="#objective">Objective</a>
+            <a href="#problem">Problem</a>
+            <a href="#methodology">Methodology</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#models">ML Models</a>
+            <a href="#features">Features</a>
+            <a href="#tech">Tech Stack</a>
+            <a href="#results">Results</a>
+            <a href="#findings">Findings</a>
+        </nav>
+
+        <!-- SECTION 1: Project Objective -->
+        <section class="section" id="objective">
+            <h2>🎯 Project Objective</h2>
+
+            <div class="highlight">
+                <p><strong>Primary Goal:</strong> Build an intelligent productivity tracking application that
+                    automatically monitors computer usage, classifies activities, and uses Machine Learning to predict
+                    future productivity patterns.</p>
+            </div>
+
+            <h3>Specific Objectives</h3>
+            <ol>
+                <li><strong>Automatic Activity Tracking:</strong> Build a background tracker that monitors active
+                    windows every 10 seconds without manual input</li>
+                <li><strong>Smart Classification:</strong> Automatically categorize apps as productive (VS Code, Excel)
+                    or distracting (YouTube, Instagram)</li>
+                <li><strong>Time Series Forecasting:</strong> Implement three ML models (LSTM, ARIMA, Prophet) to
+                    predict 7-day productivity</li>
+                <li><strong>Ensemble Learning:</strong> Combine multiple models using weighted averaging for improved
+                    accuracy</li>
+                <li><strong>Real-time Dashboard:</strong> Display tracked data, analytics, and ML predictions in a
+                    beautiful UI</li>
+                <li><strong>Actionable Insights:</strong> Provide best focus windows, distraction triggers, and
+                    behavioral patterns</li>
+            </ol>
+
+            <h3>Why This Project?</h3>
+            <ul>
+                <li>Demonstrates <strong>end-to-end ML pipeline</strong> from data collection to prediction</li>
+                <li>Practical application of <strong>time series forecasting</strong> techniques</li>
+                <li>Integration of <strong>deep learning (LSTM)</strong> with statistical models (ARIMA, Prophet)</li>
+                <li>Full-stack development with <strong>React + Flask + MongoDB</strong></li>
+            </ul>
+        </section>
+
+        <!-- SECTION 2: Problem Statement -->
+        <section class="section" id="problem">
+            <h2>❓ Problem Statement</h2>
+
+            <h3>The Digital Distraction Crisis</h3>
+            <p>In today's digital world, knowledge workers face constant distractions that significantly impact
+                productivity. Studies show alarming statistics:</p>
+
+            <div class="metrics-grid">
+                <div class="metric-box">
+                    <div class="metric-value">11 min</div>
+                    <div class="metric-label">Avg time before distraction</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value">25 min</div>
+                    <div class="metric-label">Time to refocus</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value">2.5 hrs</div>
+                    <div class="metric-label">Daily time lost</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value">67%</div>
+                    <div class="metric-label">Workers struggle with focus</div>
+                </div>
+            </div>
+
+            <h3>Problems with Existing Solutions</h3>
+            <table>
+                <tr>
+                    <th>Issue</th>
+                    <th>Traditional Tools</th>
+                    <th>FocusFlow Solution ✨</th>
+                </tr>
+                <tr>
+                    <td>Tracking Method</td>
+                    <td>❌ Manual time entry (tedious)</td>
+                    <td>✅ Automatic background tracking</td>
+                </tr>
+                <tr>
+                    <td>Analysis Type</td>
+                    <td>❌ Basic statistics only</td>
+                    <td>✅ ML-powered predictions</td>
+                </tr>
+                <tr>
+                    <td>Future Planning</td>
+                    <td>❌ No forecasting capability</td>
+                    <td>✅ 7-day productivity forecasts</td>
+                </tr>
+                <tr>
+                    <td>AI/ML Integration</td>
+                    <td>❌ None</td>
+                    <td>✅ LSTM + ARIMA + Prophet ensemble</td>
+                </tr>
+                <tr>
+                    <td>Personalization</td>
+                    <td>❌ Generic advice</td>
+                    <td>✅ Pattern-based recommendations</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- SECTION 3: Methodology -->
+        <section class="section" id="methodology">
+            <h2>📋 Methodology</h2>
+
+            <h3>Overall Approach</h3>
+            <p>We follow a systematic data science methodology with these phases:</p>
+
+            <div class="highlight">
+                <strong>Data Collection → Preprocessing → Feature Engineering → Model Training → Evaluation → Deployment
+                    → Visualization</strong>
+            </div>
+
+            <h3>Step 1: Data Collection (Activity Tracking)</h3>
+            <p>A Python background process monitors the active window every 10 seconds:</p>
+            <div class="code-block">
+                <code><span class="code-comment"># Simplified tracking logic (tracker.py)</span>
+<span class="code-keyword">while</span> tracking:
+    active_window = get_active_window()      <span class="code-comment"># pygetwindow library</span>
+    app_name = active_window.title           <span class="code-comment"># e.g., "VS Code - main.py"</span>
+    category = categorize_app(app_name)      <span class="code-comment"># productive/distracting/neutral</span>
+    log_activity(app_name, category, <span class="code-number">10</span>)    <span class="code-comment"># Save to MongoDB</span>
+    time.sleep(<span class="code-number">10</span>)                           <span class="code-comment"># Wait 10 seconds</span></code>
+            </div>
+
+            <h3>Step 2: Data Storage Schema</h3>
+            <div class="code-block">
+                <code><span class="code-comment"># MongoDB Activity Document Structure</span>
+{
+    <span class="code-string">"user_id"</span>: <span class="code-string">"ObjectId(...)"</span>,
+    <span class="code-string">"app_name"</span>: <span class="code-string">"VS Code - project.py"</span>,
+    <span class="code-string">"category"</span>: <span class="code-string">"productive"</span>,
+    <span class="code-string">"is_productive"</span>: <span class="code-keyword">true</span>,
+    <span class="code-string">"duration_minutes"</span>: <span class="code-number">0.167</span>,      <span class="code-comment"># 10 seconds = 0.167 min</span>
+    <span class="code-string">"timestamp"</span>: <span class="code-string">"2024-01-15T10:30:00Z"</span>
+}</code>
+            </div>
+
+            <h3>Step 3: Data Preprocessing</h3>
+            <ul>
+                <li><strong>Aggregation:</strong> Sum daily productive minutes from raw activities</li>
+                <li><strong>Time Series Format:</strong> Convert to Prophet-compatible format (ds, y columns)</li>
+                <li><strong>Train/Test Split:</strong> 80% training (72 days), 20% testing (19 days)</li>
+                <li><strong>Normalization:</strong> MinMaxScaler for LSTM input (0-1 range)</li>
+            </ul>
+
+            <h3>Step 4: Feature Engineering</h3>
+            <div class="code-block">
+                <code><span class="code-comment"># Features extracted for productivity classification</span>
+features = {
+    <span class="code-string">'tasks_completed'</span>: <span class="code-number">15</span>,          <span class="code-comment"># From task management</span>
+    <span class="code-string">'completion_rate'</span>: <span class="code-number">75.0</span>,        <span class="code-comment"># Percentage</span>
+    <span class="code-string">'productive_time'</span>: <span class="code-number">1200</span>,        <span class="code-comment"># Minutes this week</span>
+    <span class="code-string">'distraction_time'</span>: <span class="code-number">400</span>,       <span class="code-comment"># Minutes this week</span>
+    <span class="code-string">'focus_sessions'</span>: <span class="code-number">12</span>,          <span class="code-comment"># Pomodoro-style sessions</span>
+    <span class="code-string">'avg_session_duration'</span>: <span class="code-number">45</span>,    <span class="code-comment"># Minutes</span>
+    <span class="code-string">'consistency_score'</span>: <span class="code-number">85.7</span>,     <span class="code-comment"># Days with >2hrs productive</span>
+    <span class="code-string">'focus_ratio'</span>: <span class="code-number">0.75</span>            <span class="code-comment"># productive / (productive + distracted)</span>
+}</code>
+            </div>
+
+            <h3>Step 5: Model Training Pipeline</h3>
+            <div class="flow-diagram">
+                Historical Data (91 days)
+                │
+                ▼
+                ┌─────────────────────────────────────────────────┐
+                │ DATA PREPROCESSING │
+                │ • Parse dates and aggregate daily totals │
+                │ • Create time series DataFrame (ds, y) │
+                │ • Split: 80% train (72 days), 20% test (19 days)│
+                └────────────────────┬────────────────────────────┘
+                │
+                ┌───────────────┼───────────────┐
+                ▼ ▼ ▼
+                ┌─────────┐ ┌─────────┐ ┌─────────┐
+                │ LSTM │ │ ARIMA │ │ Prophet │
+                │ (40%) │ │ (30%) │ │ (30%) │
+                │ Neural │ │ Stats │ │ Additive│
+                │ Network │ │ Model │ │ Model │
+                └────┬────┘ └────┬────┘ └────┬────┘
+                │ │ │
+                └───────────────┼───────────────┘
+                ▼
+                ┌─────────────────────┐
+                │ ENSEMBLE FORECAST │
+                │ Weighted Average │
+                │ 0.4×LSTM + 0.3×ARIMA│
+                │ + 0.3×Prophet │
+                └─────────────────────┘
+            </div>
+
+            <h3>Step 6: Evaluation Metrics</h3>
+            <ul>
+                <li><strong>MAE (Mean Absolute Error):</strong> Average prediction error in minutes</li>
+                <li><strong>RMSE (Root Mean Square Error):</strong> Penalizes larger errors more heavily</li>
+                <li><strong>MAPE (Mean Absolute Percentage Error):</strong> Error as a percentage of actual value</li>
+            </ul>
+        </section>
+
+        <!-- SECTION 4: System Architecture -->
+        <section class="section" id="architecture">
+            <h2>🏗️ System Architecture</h2>
+
+            <div class="architecture-diagram">
+                <div class="arch-section-title">── FRONTEND (React + TypeScript) ──</div>
+                <div class="arch-row">
+                    <div class="arch-box frontend">
+                        Dashboard
+                        <div class="arch-label">Real-time stats</div>
+                    </div>
+                    <div class="arch-box frontend">
+                        Analytics
+                        <div class="arch-label">Charts & trends</div>
+                    </div>
+                    <div class="arch-box frontend">
+                        ML Insights
+                        <div class="arch-label">Predictions</div>
+                    </div>
+                    <div class="arch-box frontend">
+                        Task Manager
+                        <div class="arch-label">CRUD tasks</div>
+                    </div>
+                </div>
+
+                <div class="arch-row">
+                    <span class="arch-arrow">▼ HTTP/REST API ▼</span>
+                </div>
+
+                <div class="arch-section-title">── BACKEND (Flask + Python) ──</div>
+                <div class="arch-row">
+                    <div class="arch-box backend">
+                        Auth Routes
+                        <div class="arch-label">JWT tokens</div>
+                    </div>
+                    <div class="arch-box backend">
+                        Activity Routes
+                        <div class="arch-label">Log & query</div>
+                    </div>
+                    <div class="arch-box backend">
+                        Insights Routes
+                        <div class="arch-label">ML predictions</div>
+                    </div>
+                    <div class="arch-box backend">
+                        Task Routes
+                        <div class="arch-label">CRUD ops</div>
+                    </div>
+                </div>
+
+                <div class="arch-row">
+                    <span class="arch-arrow">▼</span>
+                    <span class="arch-arrow" style="margin-left: 200px;">▼</span>
+                </div>
+
+                <div class="arch-section-title">── ML LAYER ──</div>
+                <div class="arch-row">
+                    <div class="arch-box ml">
+                        LSTM
+                        <div class="arch-label">TensorFlow/Keras</div>
+                    </div>
+                    <div class="arch-box ml">
+                        ARIMA
+                        <div class="arch-label">Statsmodels</div>
+                    </div>
+                    <div class="arch-box ml">
+                        Prophet
+                        <div class="arch-label">Meta/Facebook</div>
+                    </div>
+                    <div class="arch-box ml">
+                        Ensemble
+                        <div class="arch-label">Weighted avg</div>
+                    </div>
+                </div>
+
+                <div class="arch-row">
+                    <span class="arch-arrow">◀─────────────▶</span>
+                </div>
+
+                <div class="arch-section-title">── DATA LAYER ──</div>
+                <div class="arch-row">
+                    <div class="arch-box db">
+                        MongoDB
+                        <div class="arch-label">Activities, Users, Tasks</div>
+                    </div>
+                    <div class="arch-box tracker">
+                        Desktop Tracker
+                        <div class="arch-label">pygetwindow</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Data Flow</h3>
+            <ol>
+                <li><strong>Tracker</strong> → Monitors active window every 10 seconds</li>
+                <li><strong>API</strong> → Receives activity logs and stores in MongoDB</li>
+                <li><strong>ML Pipeline</strong> → Processes data, trains models, generates predictions</li>
+                <li><strong>Frontend</strong> → Fetches and visualizes data in real-time</li>
+            </ol>
+        </section>
+
+        <!-- SECTION 5: ML Models -->
+        <section class="section" id="models">
+            <h2>🧠 Machine Learning Models</h2>
+
+            <p>We use <strong>three different models</strong> because each captures different patterns. Combining them
+                (ensemble) gives better accuracy than any single model!</p>
+
+            <div class="model-card">
+                <h4>1. LSTM (Long Short-Term Memory)</h4>
+                <span class="badge badge-purple">Deep Learning</span>
+                <span class="badge badge-blue">Neural Network</span>
+                <span class="badge badge-green">Weight: 40%</span>
+
+                <h4 style="margin-top: 20px; color: var(--accent);">What is LSTM?</h4>
+                <p>A type of Recurrent Neural Network (RNN) designed to remember long-term dependencies. It uses "gates"
+                    to control information flow, avoiding the vanishing gradient problem.</p>
+
+                <h4 style="color: var(--accent);">Why LSTM for this project?</h4>
+                <ul>
+                    <li>Captures <strong>complex non-linear patterns</strong> humans can't see</li>
+                    <li>Learns <strong>sequential dependencies</strong> (if Monday productive, Tuesday might be too)
+                    </li>
+                    <li>Handles <strong>variable length input</strong> (uses 7-day lookback window)</li>
+                </ul>
+
+                <h4 style="color: var(--accent);">Architecture Used</h4>
+                <div class="code-block">
+                    <code>model = Sequential([
+    LSTM(<span class="code-number">50</span>, return_sequences=<span class="code-keyword">True</span>, input_shape=(<span class="code-number">7</span>, <span class="code-number">1</span>)),  <span class="code-comment"># 50 units, 7-day sequence</span>
+    Dropout(<span class="code-number">0.2</span>),                                       <span class="code-comment"># Prevent overfitting</span>
+    LSTM(<span class="code-number">50</span>),                                            <span class="code-comment"># Second LSTM layer</span>
+    Dropout(<span class="code-number">0.2</span>),
+    Dense(<span class="code-number">1</span>)                                             <span class="code-comment"># Output: next day prediction</span>
+])</code>
+                </div>
+            </div>
+
+            <div class="model-card">
+                <h4>2. ARIMA (AutoRegressive Integrated Moving Average)</h4>
+                <span class="badge badge-green">Statistical</span>
+                <span class="badge badge-orange">Classical ML</span>
+                <span class="badge badge-cyan">Weight: 30%</span>
+
+                <h4 style="margin-top: 20px; color: var(--accent);">What is ARIMA?</h4>
+                <p>A classic statistical model used since the 1970s for time series forecasting. It combines
+                    autoregression (AR), differencing (I), and moving average (MA) components.</p>
+
+                <h4 style="color: var(--accent);">Our Configuration: ARIMA(1, 0, 0)</h4>
+                <ul>
+                    <li><strong>p = 1 (AR term):</strong> Use yesterday's value to predict today</li>
+                    <li><strong>d = 0 (Differencing):</strong> Data is already stationary, no trend removal needed</li>
+                    <li><strong>q = 0 (MA term):</strong> Don't use past prediction errors</li>
+                </ul>
+
+                <h4 style="color: var(--accent);">The Formula</h4>
+                <div class="code-block">
+                    <code>Today's Productivity = c + (φ × Yesterday's Productivity) + ε
+
+<span class="code-comment"># Example calculation:</span>
+<span class="code-comment"># If yesterday = 200 min, coefficient φ = 0.8, constant c = 30</span>
+<span class="code-comment"># Today ≈ 30 + (0.8 × 200) = 190 minutes</span></code>
+                </div>
+
+                <h4 style="color: var(--accent);">Why ARIMA for this project?</h4>
+                <ul>
+                    <li><strong>Simple and interpretable</strong> - easy to explain</li>
+                    <li><strong>Great for smooth trends</strong> - captures gradual changes</li>
+                    <li><strong>Lowest absolute error (MAE)</strong> in our evaluation</li>
+                </ul>
+            </div>
+
+            <div class="model-card">
+                <h4>3. Prophet (by Meta/Facebook)</h4>
+                <span class="badge badge-orange">Seasonality</span>
+                <span class="badge badge-blue">Additive Model</span>
+                <span class="badge badge-cyan">Weight: 30%</span>
+
+                <h4 style="margin-top: 20px; color: var(--accent);">What is Prophet?</h4>
+                <p>A forecasting tool developed by Facebook specifically for business time series with strong seasonal
+                    patterns and multiple seasonalities.</p>
+
+                <h4 style="color: var(--accent);">The Formula</h4>
+                <div class="code-block">
+                    <code>y(t) = g(t) + s(t) + h(t) + ε(t)
+
+Where:
+  g(t) = Trend (overall growth/decline)
+  s(t) = Seasonality (weekly, monthly patterns)
+  h(t) = Holiday effects
+  ε(t) = Error term
+
+<span class="code-comment"># Example for a Friday:</span>
+<span class="code-comment"># Base trend: 200 min</span>
+<span class="code-comment"># Weekly pattern: -30 min (Fridays are less productive)</span>
+<span class="code-comment"># Friday prediction: 170 min</span></code>
+                </div>
+
+                <h4 style="color: var(--accent);">Why Prophet for this project?</h4>
+                <ul>
+                    <li><strong>Automatic seasonality detection</strong> (weekday vs weekend patterns)</li>
+                    <li><strong>Handles missing data</strong> gracefully</li>
+                    <li><strong>Provides uncertainty intervals</strong> for predictions</li>
+                </ul>
+            </div>
+
+            <h3>Why Ensemble (Combine All Three)?</h3>
+            <div class="highlight highlight-success">
+                <p>Each model has unique strengths and weaknesses. By combining them with weighted averaging, we get the
+                    "wisdom of the crowd" effect - reducing individual model errors!</p>
+            </div>
+
+            <div class="code-block">
+                <code><span class="code-comment"># Ensemble prediction formula</span>
+final_prediction = (<span class="code-number">0.4</span> × LSTM) + (<span class="code-number">0.3</span> × ARIMA) + (<span class="code-number">0.3</span> × Prophet)
+
+<span class="code-comment"># Example:</span>
+LSTM_pred   = <span class="code-number">180</span> min
+ARIMA_pred  = <span class="code-number">200</span> min
+Prophet_pred = <span class="code-number">170</span> min
+
+ensemble = (<span class="code-number">0.4</span> × <span class="code-number">180</span>) + (<span class="code-number">0.3</span> × <span class="code-number">200</span>) + (<span class="code-number">0.3</span> × <span class="code-number">170</span>)
+         = <span class="code-number">72</span> + <span class="code-number">60</span> + <span class="code-number">51</span>
+         = <span class="code-number">183</span> min  <span class="code-comment"># Final prediction</span></code>
+            </div>
+
+            <table>
+                <tr>
+                    <th>Model</th>
+                    <th>Weight</th>
+                    <th>Best At</th>
+                    <th>Weakness</th>
+                </tr>
+                <tr>
+                    <td>LSTM</td>
+                    <td>40%</td>
+                    <td>Complex patterns, non-linear relationships</td>
+                    <td>Needs more data, slower to train</td>
+                </tr>
+                <tr>
+                    <td>ARIMA</td>
+                    <td>30%</td>
+                    <td>Smooth trends, lowest MAE</td>
+                    <td>Struggles with sudden changes</td>
+                </tr>
+                <tr>
+                    <td>Prophet</td>
+                    <td>30%</td>
+                    <td>Weekly seasonality, interpretable</td>
+                    <td>May overfit to seasonal patterns</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- SECTION 6: Features Implemented -->
+        <section class="section" id="features">
+            <h2>✨ Features Implemented</h2>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h4>Automatic Activity Tracking</h4>
+                    <p>Background Python process monitors active windows every 10 seconds using pygetwindow. No manual
+                        entry required!</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h4>Smart App Classification</h4>
+                    <p>Automatically categorizes apps as productive (VS Code, Notion), distracting (YouTube, Instagram),
+                        or neutral using keyword matching.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h4>Real-time Dashboard</h4>
+                    <p>Live productivity score, hourly breakdown charts, task statistics, and focus session metrics -
+                        all from actual tracked data.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h4>7-Day ML Forecasting</h4>
+                    <p>LSTM, ARIMA, and Prophet models predict your productivity for the next week with confidence
+                        intervals.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h4>Trend Analysis</h4>
+                    <p>Weekly trends, hourly breakdowns, and productivity patterns visualized with interactive charts.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔔</div>
+                    <h4>Focus Windows Detection</h4>
+                    <p>Identifies your peak productivity hours based on historical data so you can schedule important
+                        tasks accordingly.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h4>Auto-retraining</h4>
+                    <p>ML models automatically retrain every 20 new activities to stay current with your changing
+                        patterns.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h4>Modern React UI</h4>
+                    <p>Beautiful dark-mode dashboard with smooth animations, responsive design, and intuitive
+                        navigation.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 7: Technology Stack -->
+        <section class="section" id="tech">
+            <h2>🛠️ Technology Stack</h2>
+
+            <h3>Frontend Technologies</h3>
+            <table>
+                <tr>
+                    <th>Technology</th>
+                    <th>Purpose</th>
+                    <th>Why We Chose It</th>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">React 18</span></td>
+                    <td>UI Framework</td>
+                    <td>Component-based, fast virtual DOM, huge ecosystem</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">TypeScript</span></td>
+                    <td>Programming Language</td>
+                    <td>Type safety, fewer runtime bugs, better IDE support</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">Vite</span></td>
+                    <td>Build Tool</td>
+                    <td>Lightning-fast HMR, modern ES modules</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-blue">Lucide React</span></td>
+                    <td>Icons</td>
+                    <td>Beautiful, consistent icon library</td>
+                </tr>
+            </table>
+
+            <h3>Backend Technologies</h3>
+            <table>
+                <tr>
+                    <th>Technology</th>
+                    <th>Purpose</th>
+                    <th>Why We Chose It</th>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-green">Python 3.11</span></td>
+                    <td>Primary Language</td>
+                    <td>Best ecosystem for ML, easy to read and write</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-green">Flask</span></td>
+                    <td>Web Framework</td>
+                    <td>Lightweight, simple REST API creation</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-green">MongoDB</span></td>
+                    <td>Database</td>
+                    <td>Flexible schema, good for time-series data</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-green">pygetwindow</span></td>
+                    <td>Window Detection</td>
+                    <td>Cross-platform active window monitoring</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-green">JWT</span></td>
+                    <td>Authentication</td>
+                    <td>Secure, stateless token-based auth</td>
+                </tr>
+            </table>
+
+            <h3>Machine Learning Stack</h3>
+            <table>
+                <tr>
+                    <th>Technology</th>
+                    <th>Purpose</th>
+                    <th>Why We Chose It</th>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-purple">TensorFlow/Keras</span></td>
+                    <td>LSTM Implementation</td>
+                    <td>Industry standard for deep learning, sequential API</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-purple">Statsmodels</span></td>
+                    <td>ARIMA Model</td>
+                    <td>Comprehensive statistical modeling library</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-purple">Prophet</span></td>
+                    <td>Seasonality Model</td>
+                    <td>Facebook's proven forecasting tool</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-purple">Pandas/NumPy</span></td>
+                    <td>Data Processing</td>
+                    <td>Fast data manipulation and numerical computing</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-purple">Scikit-learn</span></td>
+                    <td>Preprocessing</td>
+                    <td>MinMaxScaler, train/test split utilities</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- SECTION 8: Results & Metrics -->
+        <section class="section" id="results">
+            <h2>📈 Model Performance Results</h2>
+
+            <h3>Dataset Used</h3>
+            <table>
+                <tr>
+                    <th>Attribute</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Dataset Name</td>
+                    <td>Screen Time App Usage Dataset</td>
+                </tr>
+                <tr>
+                    <td>Total Records</td>
+                    <td>3,000 activity entries</td>
+                </tr>
+                <tr>
+                    <td>Date Range</td>
+                    <td>91 days (January - March 2024)</td>
+                </tr>
+                <tr>
+                    <td>Avg Productive Time/Day</td>
+                    <td>244.87 minutes (~4 hours)</td>
+                </tr>
+                <tr>
+                    <td>Train/Test Split</td>
+                    <td>80% (72 days) / 20% (19 days)</td>
+                </tr>
+            </table>
+
+            <h3>Evaluation Metrics Comparison</h3>
+            <table>
+                <tr>
+                    <th>Model</th>
+                    <th>MAE ↓</th>
+                    <th>RMSE ↓</th>
+                    <th>MAPE ↓</th>
+                    <th>Best At</th>
+                </tr>
+                <tr>
+                    <td><strong>LSTM</strong></td>
+                    <td>103.3 min</td>
+                    <td>114.54 min</td>
+                    <td style="color: #34d399;"><strong>65.33%</strong> ⭐</td>
+                    <td>Percentage accuracy</td>
+                </tr>
+                <tr>
+                    <td><strong>ARIMA (1,0,0)</strong></td>
+                    <td style="color: #34d399;"><strong>85.61 min</strong> ⭐</td>
+                    <td style="color: #34d399;"><strong>106.47 min</strong> ⭐</td>
+                    <td>98.63%</td>
+                    <td>Absolute error</td>
+                </tr>
+                <tr>
+                    <td><strong>Prophet</strong></td>
+                    <td>108.26 min</td>
+                    <td>130.62 min</td>
+                    <td>132.42%</td>
+                    <td>Weekly patterns</td>
+                </tr>
+            </table>
+
+            <div class="highlight highlight-success">
+                <h4>Key Findings from Evaluation</h4>
+                <ul>
+                    <li><strong>ARIMA</strong> achieved the lowest MAE (85.61 min) and RMSE (106.47 min) - best for
+                        absolute accuracy</li>
+                    <li><strong>LSTM</strong> achieved the best MAPE (65.33%) - best for percentage accuracy</li>
+                    <li><strong>Prophet</strong> excels at capturing day-of-week patterns (weekday vs weekend)</li>
+                    <li><strong>Ensemble approach</strong> balances all three, providing robust predictions</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SECTION 9: Findings & Insights -->
+        <section class="section" id="findings">
+            <h2>🔍 Key Findings & Learnings</h2>
+
+            <h3>Technical Findings</h3>
+            <ol>
+                <li><strong>ARIMA(1,0,0) Works Best:</strong> Simple AR(1) model outperformed complex configurations
+                    because productivity is largely influenced by the previous day</li>
+                <li><strong>LSTM Needs More Data:</strong> With only 91 days, LSTM couldn't fully leverage its
+                    pattern-learning capability</li>
+                <li><strong>Prophet Captures Seasonality:</strong> Successfully identified that weekends have 30-40%
+                    lower productivity</li>
+                <li><strong>Ensemble Reduces Variance:</strong> Combining models smooths out individual prediction
+                    spikes</li>
+            </ol>
+
+            <h3>Productivity Patterns Discovered</h3>
+            <ul>
+                <li><strong>Peak Hours:</strong> 9 AM - 11 AM typically shows highest productive time</li>
+                <li><strong>Post-Lunch Dip:</strong> 1 PM - 3 PM shows increased distraction activity</li>
+                <li><strong>Weekend Drop:</strong> Saturday/Sunday productivity is 35% lower on average</li>
+                <li><strong>Monday Surge:</strong> Start of week shows 5% higher productivity than weekly average</li>
+            </ul>
+
+            <h3>Challenges Faced & Solutions</h3>
+            <table>
+                <tr>
+                    <th>Challenge</th>
+                    <th>Solution</th>
+                </tr>
+                <tr>
+                    <td>TensorFlow import errors</td>
+                    <td>Implemented fallback mode using statistical predictions</td>
+                </tr>
+                <tr>
+                    <td>MongoDB ObjectId serialization</td>
+                    <td>Created _make_serializable helper to convert NumPy types</td>
+                </tr>
+                <tr>
+                    <td>Real-time data display</td>
+                    <td>Ensured all frontend components use actual database data</td>
+                </tr>
+                <tr>
+                    <td>Model retraining</td>
+                    <td>Auto-retrain every 20 activities using checkpoint system</td>
+                </tr>
+            </table>
+
+            <h3>Future Improvements</h3>
+            <ul>
+                <li>Deploy to cloud (Render/Railway) for remote access</li>
+                <li>Add mobile app for cross-device tracking</li>
+                <li>Implement app blocking during focus sessions</li>
+                <li>Add more advanced models (Transformer, XGBoost)</li>
+                <li>Create team/collaborative features</li>
+            </ul>
+        </section>
+
+        <!-- Summary Section -->
+        <section class="section">
+            <h2>📝 Project Summary</h2>
+
+            <div class="highlight">
+                <h3 style="color: var(--primary); margin-bottom: 16px;">FocusFlow in One Paragraph</h3>
+                <p style="font-size: 1.1rem; line-height: 1.8;">
+                    <strong>FocusFlow</strong> is an AI-powered productivity tracking system that automatically monitors
+                    computer usage, classifies activities as productive or distracting, and uses
+                    <strong>three machine learning models (LSTM, ARIMA, and Prophet)</strong> to predict future
+                    productivity patterns. The ensemble approach combines the strengths of deep learning,
+                    statistical analysis, and seasonality modeling to provide accurate <strong>7-day forecasts</strong>.
+                    Built with <strong>React, Flask, and MongoDB</strong>, it offers a beautiful dashboard to visualize
+                    your productivity journey with real-time insights and actionable recommendations.
+                </p>
+            </div>
+
+            <h3>Quick Reference: What We Built</h3>
+            <div class="metrics-grid">
+                <div class="metric-box">
+                    <div class="metric-value">3</div>
+                    <div class="metric-label">ML Models</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value">10s</div>
+                    <div class="metric-label">Tracking Interval</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value">7</div>
+                    <div class="metric-label">Day Forecasts</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value">16</div>
+                    <div class="metric-label">React Components</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value">12+</div>
+                    <div class="metric-label">REST API Endpoints</div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class="logo">🎯 FocusFlow</div>
+            <p>AI-Powered Productivity Tracking & Prediction System</p>
+            <p style="margin-top: 16px;">Built with ❤️ using React, Flask, MongoDB, and Machine Learning</p>
+            <p style="margin-top: 8px; font-size: 0.85rem;">© 2024 - Semester 6 Project Documentation</p>
+        </footer>
+    </div>
+</body>
+
+</html>

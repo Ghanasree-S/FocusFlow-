@@ -243,6 +243,24 @@ export const insightsApi = {
     getModelForecast: async (model: 'lstm' | 'arima' | 'prophet' | 'ensemble', periods: number = 7) => {
         return await apiRequest(`/insights/ml/forecast/${model}?periods=${periods}`);
     },
+
+    // Analytics APIs
+    getFocusWindows: async () => {
+        return await apiRequest('/insights/focus-windows');
+    },
+
+    getDistractionPatterns: async () => {
+        return await apiRequest('/insights/distraction-patterns');
+    },
+
+    getTopApps: async (days: number = 7, category?: string) => {
+        const query = category ? `?days=${days}&category=${category}` : `?days=${days}`;
+        return await apiRequest(`/insights/top-apps${query}`);
+    },
+
+    getRealtimePredictions: async () => {
+        return await apiRequest('/insights/ml/realtime-predictions');
+    },
 };
 
 // ============ HEALTH CHECK ============

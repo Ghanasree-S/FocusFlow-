@@ -168,10 +168,12 @@ const FocusMode: React.FC = () => {
               cx="160" cy="160" r="150"
               className="fill-none stroke-slate-200 dark:stroke-slate-800 stroke-[8]"
             />
+            {/* eslint-disable-next-line react/no-unknown-property */}
             <circle
               cx="160" cy="160" r="150"
               className={`fill-none stroke-[8] transition-all duration-1000 ease-linear ${sessionType === 'Work' ? 'stroke-indigo-600' : 'stroke-emerald-600'
                 }`}
+              // eslint-disable-next-line react/no-unknown-property
               style={{
                 strokeDasharray: '942.48',
                 strokeDashoffset: 942.48 * (1 - progress)
@@ -193,6 +195,8 @@ const FocusMode: React.FC = () => {
         {/* Controls */}
         <div className="flex justify-center items-center gap-6">
           <button
+            title="Reset timer"
+            aria-label="Reset timer"
             onClick={handleReset}
             className="p-4 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-500 transition-all"
           >
@@ -200,6 +204,8 @@ const FocusMode: React.FC = () => {
           </button>
 
           <button
+            title={isActive ? "Pause session" : "Start session"}
+            aria-label={isActive ? "Pause session" : "Start session"}
             onClick={isActive ? handlePause : handleStart}
             className={`w-20 h-20 rounded-full flex items-center justify-center text-white shadow-xl hover:scale-105 active:scale-95 transition-all ${sessionType === 'Work'
               ? 'bg-indigo-600 shadow-indigo-600/30'
@@ -210,6 +216,8 @@ const FocusMode: React.FC = () => {
           </button>
 
           <button
+            title="Stop session"
+            aria-label="Stop session"
             onClick={handleStop}
             className="p-4 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 transition-all"
           >

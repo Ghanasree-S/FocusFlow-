@@ -67,10 +67,10 @@ class ARIMAForecaster:
         """
         self.model = None
         self.model_fit = None
-        self.order = (1, 1, 1)  # Default ARIMA order (p, d, q)
+        self.order = (1, 0, 0)  # Default ARIMA order (p, d, q) - AR(1) model
         self.seasonal_order = (1, 0, 1, 7)  # Weekly seasonality
         self.model_path = model_path or os.path.join(
-            os.path.dirname(__file__), 'models', 'arima_forecaster.pkl'
+            os.path.dirname(__file__), 'saved_models', 'arima_model.pkl'
         )
         self.is_trained = False
         self.training_data = None
@@ -92,7 +92,7 @@ class ARIMAForecaster:
                     self.seasonal_order = data.get('seasonal_order', (1, 0, 1, 7))
                     self.training_data = data.get('training_data')
                     self.is_trained = True
-                    print("✅ ARIMA model loaded successfully")
+                    print("[OK] ARIMA model loaded successfully")
         except Exception as e:
             print(f"Could not load ARIMA model: {e}")
             self.model_fit = None
@@ -112,7 +112,7 @@ class ARIMAForecaster:
                     'seasonal_order': self.seasonal_order,
                     'training_data': self.training_data
                 }, f)
-            print("✅ ARIMA model saved successfully")
+            print("[OK] ARIMA model saved successfully")
         except Exception as e:
             print(f"Could not save ARIMA model: {e}")
     
@@ -207,7 +207,7 @@ class ARIMAForecaster:
             )
             
             order = auto_model.order
-            print(f"✅ Optimal ARIMA order found: {order}")
+            print(f"[OK] Optimal ARIMA order found: {order}")
             return order
             
         except Exception as e:
@@ -235,9 +235,12 @@ class ARIMAForecaster:
         data = historical_data.set_index('ds')['y']
         self.training_data = data.copy()
         
-        # Find optimal order if requested
+        # Use fixed order (1,0,0) - AR(1) model
+        # Set auto_order=False to use fixed order, True to auto-select
         if auto_order:
-            self.order = self.find_optimal_order(data)
+            # Force AR(1) model as per project requirement
+            self.order = (1, 0, 0)
+            print(f"[OK] Using fixed ARIMA order: {self.order}")
         
         try:
             # Fit ARIMA model

@@ -166,15 +166,66 @@ class ActivityModel:
         
         return hourly
     
+    def get_top_apps(self, user_id: str, days: int = 7, category: str = None) -> list:
+        """Get top apps by duration, optionally filtered by category"""
+        from bson import ObjectId
+        
+        # Convert to ObjectId if string
+        if isinstance(user_id, str):
+            try:
+                user_id = ObjectId(user_id)
+            except:
+                pass
+        
+        start_date = datetime.utcnow() - timedelta(days=days)
+        
+        match_stage = {
+            'user_id': user_id,
+            'timestamp': {'$gte': start_date}
+        }
+        
+        if category:
+            match_stage['category'] = category
+        
+        pipeline = [
+            {'$match': match_stage},
+            {'$group': {
+                '_id': '$app_name',
+                'total_minutes': {'$sum': '$duration_minutes'},
+                'count': {'$sum': 1}
+            }},
+            {'$sort': {'total_minutes': -1}},
+            {'$limit': 10}
+        ]
+        
+        results = list(self.collection.aggregate(pipeline))
+        
+        return [
+            {
+                'app_name': r['_id'],
+                'total_minutes': r['total_minutes'],
+                'count': r['count']
+            }
+            for r in results
+        ]
+    
     def _serialize(self, activity: dict) -> dict:
         """Serialize activity for API response"""
         if not activity:
             return None
+        
+        # Handle missing is_productive field (for older records)
+        is_productive = activity.get('is_productive')
+        if is_productive is None:
+            # Derive from category if is_productive field is missing
+            category = activity.get('category', 'neutral')
+            is_productive = category == 'productive'
+        
         return {
             'id': str(activity['_id']),
-            'app_name': activity['app_name'],
-            'category': activity['category'],
-            'duration_minutes': activity['duration_minutes'],
-            'is_productive': activity['is_productive'],
-            'timestamp': activity['timestamp'].isoformat()
+            'app_name': activity.get('app_name', 'Unknown'),
+            'category': activity.get('category', 'neutral'),
+            'duration_minutes': activity.get('duration_minutes', 0),
+            'is_productive': is_productive,
+            'timestamp': activity.get('timestamp', datetime.utcnow()).isoformat()
         }

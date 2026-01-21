@@ -28,8 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, onLogout }) => 
     { id: 'DASHBOARD' as View, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'TASKS' as View, label: 'Task Manager', icon: CheckSquare },
     { id: 'ANALYTICS' as View, label: 'Analytics', icon: BarChart3 },
-    { id: 'INSIGHTS' as View, label: 'ML Insights', icon: BrainCircuit },
-    { id: 'ML_INSIGHTS' as View, label: 'Time Series', icon: Zap },
+    { id: 'ML_INSIGHTS' as View, label: 'ML Insights', icon: BrainCircuit },
     { id: 'FOCUS' as View, label: 'Focus Mode', icon: Target },
     { id: 'REPORTS' as View, label: 'Reports', icon: FileText },
   ];
@@ -56,8 +55,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, onLogout }) => 
             key={item.id}
             onClick={() => setView(item.id)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${currentView === item.id
-                ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
           >
             <item.icon className={`w-5 h-5 ${currentView === item.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
@@ -75,8 +74,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, onLogout }) => 
             key={item.id}
             onClick={() => setView(item.id)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentView === item.id
-                ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
           >
             <item.icon className="w-5 h-5" />
