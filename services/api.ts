@@ -261,6 +261,31 @@ export const insightsApi = {
     getRealtimePredictions: async () => {
         return await apiRequest('/insights/ml/realtime-predictions');
     },
+
+    seedDemoData: async () => {
+        return await apiRequest('/insights/seed-demo-data', {
+            method: 'POST',
+        });
+    },
+};
+
+// ============ TRACKER API ============
+export const trackerApi = {
+    start: async () => {
+        return await apiRequest('/tracker/start', {
+            method: 'POST',
+        });
+    },
+
+    stop: async () => {
+        return await apiRequest('/tracker/stop', {
+            method: 'POST',
+        });
+    },
+
+    status: async () => {
+        return await apiRequest('/tracker/status');
+    },
 };
 
 // ============ HEALTH CHECK ============

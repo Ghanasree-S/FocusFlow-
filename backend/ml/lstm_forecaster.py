@@ -64,9 +64,11 @@ class LSTMForecaster:
         self.scaler = MinMaxScaler() if KERAS_AVAILABLE else None
         self.sequence_length = sequence_length
         self.model_path = model_path or os.path.join(
-            os.path.dirname(__file__), 'saved_models', 'lstm_forecaster.h5'
+            os.path.dirname(__file__), 'models', 'lstm_model.keras'
         )
-        self.scaler_path = self.model_path.replace('.h5', '_scaler.pkl')
+        # Handle both .keras and .h5 extensions for scaler path
+        base_path = self.model_path.replace('.keras', '').replace('.h5', '')
+        self.scaler_path = f"{os.path.dirname(self.model_path)}/lstm_scaler.pkl"
         self.is_trained = False
         
         # Try to load existing model

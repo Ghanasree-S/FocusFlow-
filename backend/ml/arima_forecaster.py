@@ -70,7 +70,7 @@ class ARIMAForecaster:
         self.order = (1, 0, 0)  # Default ARIMA order (p, d, q) - AR(1) model
         self.seasonal_order = (1, 0, 1, 7)  # Weekly seasonality
         self.model_path = model_path or os.path.join(
-            os.path.dirname(__file__), 'saved_models', 'arima_model.pkl'
+            os.path.dirname(__file__), 'models', 'arima_model.pkl'
         )
         self.is_trained = False
         self.training_data = None
@@ -87,10 +87,16 @@ class ARIMAForecaster:
             if os.path.exists(self.model_path):
                 with open(self.model_path, 'rb') as f:
                     data = pickle.load(f)
-                    self.model_fit = data.get('model_fit')
-                    self.order = data.get('order', (1, 1, 1))
-                    self.seasonal_order = data.get('seasonal_order', (1, 0, 1, 7))
-                    self.training_data = data.get('training_data')
+                    # Handle both formats: dict with model_fit key OR direct model object
+                    if isinstance(data, dict):
+                        self.model_fit = data.get('model_fit')
+                        self.order = data.get('order', (1, 1, 1))
+                        self.seasonal_order = data.get('seasonal_order', (1, 0, 1, 7))
+                        self.training_data = data.get('training_data')
+                    else:
+                        # Direct model object (from train_all_models.py)
+                        self.model_fit = data
+                        self.order = (1, 1, 1)  # Default order used in training
                     self.is_trained = True
                     print("[OK] ARIMA model loaded successfully")
         except Exception as e:
@@ -283,15 +289,26 @@ class ARIMAForecaster:
         try:
             # Get forecast
             forecast = self.model_fit.get_forecast(steps=periods)
-            predictions = forecast.predicted_mean.values
+            predictions = forecast.predicted_mean
+            
+            # Handle both pandas Series and numpy array
+            if hasattr(predictions, 'values'):
+                predictions = predictions.values
+            predictions = np.array(predictions)
+            
             conf_int = forecast.conf_int()
+            # Handle conf_int - could be DataFrame or numpy array
+            if hasattr(conf_int, 'values'):
+                conf_int_arr = conf_int.values
+            else:
+                conf_int_arr = np.array(conf_int) if conf_int is not None else None
             
             # Ensure non-negative
             predictions = np.maximum(predictions, 0)
             
             return self._format_predictions(
                 predictions, 
-                conf_int.values if hasattr(conf_int, 'values') else None,
+                conf_int_arr,
                 periods,
                 confidence=0.82
             )

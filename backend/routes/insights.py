@@ -26,8 +26,116 @@ def _load_ml_modules():
             return False
     return True
 
+from datetime import datetime, timedelta
+import random
 
 insights_bp = Blueprint('insights', __name__, url_prefix='/api/insights')
+
+@insights_bp.route('/seed-demo-data', methods=['POST'])
+@token_required
+def seed_demo_data():
+    """Seed sample activity data for the current user - for demo purposes"""
+    db = get_db()
+    user_id = request.current_user['id']
+    
+    from bson import ObjectId
+    if isinstance(user_id, str):
+        try:
+            user_id = ObjectId(user_id)
+        except:
+            pass
+    
+    # Sample apps
+    PRODUCTIVE_APPS = [
+        ('Visual Studio Code', 'productive'),
+        ('GitHub', 'productive'),
+        ('Stack Overflow', 'productive'),
+        ('Google Docs', 'productive'),
+        ('Notion', 'productive'),
+        ('ChatGPT', 'productive'),
+    ]
+    
+    DISTRACTING_APPS = [
+        ('YouTube', 'distracting'),
+        ('Netflix', 'distracting'),
+        ('Instagram', 'distracting'),
+        ('Twitter', 'distracting'),
+        ('Reddit', 'distracting'),
+    ]
+    
+    NEUTRAL_APPS = [
+        ('Google Chrome', 'neutral'),
+        ('File Explorer', 'neutral'),
+    ]
+    
+    ALL_APPS = PRODUCTIVE_APPS + DISTRACTING_APPS + NEUTRAL_APPS
+    
+    # Clear old data for this user
+    db.activities.delete_many({'user_id': user_id})
+    db.focus_sessions.delete_many({'user_id': user_id})
+    
+    now = datetime.utcnow()
+    activities = []
+    
+    # Generate 14 days of activity data
+    for day_offset in range(14):
+        date = now - timedelta(days=day_offset)
+        is_weekday = date.weekday() < 5
+        
+        num_activities = random.randint(10, 20)
+        
+        for _ in range(num_activities):
+            if is_weekday:
+                app_pool = PRODUCTIVE_APPS * 3 + DISTRACTING_APPS + NEUTRAL_APPS
+            else:
+                app_pool = PRODUCTIVE_APPS + DISTRACTING_APPS * 2 + NEUTRAL_APPS
+            
+            app_name, category = random.choice(app_pool)
+            duration = round(random.uniform(5, 45), 2)
+            hour = random.randint(9, 21)
+            
+            timestamp = date.replace(hour=hour, minute=random.randint(0, 59))
+            
+            activities.append({
+                'user_id': user_id,
+                'app_name': app_name,
+                'category': category,
+                'is_productive': category == 'productive',
+                'duration_minutes': duration,
+                'timestamp': timestamp,
+                'created_at': now
+            })
+    
+    if activities:
+        db.activities.insert_many(activities)
+    
+    # Seed focus sessions
+    sessions = []
+    for day_offset in range(7):
+        date = now - timedelta(days=day_offset)
+        for _ in range(random.randint(1, 3)):
+            duration = random.randint(20, 50)
+            hour = random.randint(9, 17)
+            start_time = date.replace(hour=hour, minute=0)
+            
+            sessions.append({
+                'user_id': user_id,
+                'duration_minutes': duration,
+                'start_time': start_time,
+                'end_time': start_time + timedelta(minutes=duration),
+                'completed': True,
+                'created_at': now
+            })
+    
+    if sessions:
+        db.focus_sessions.insert_many(sessions)
+    
+    return jsonify({
+        'success': True,
+        'message': f'Seeded {len(activities)} activities and {len(sessions)} focus sessions',
+        'activities_count': len(activities),
+        'sessions_count': len(sessions)
+    })
 
 @insights_bp.route('/dashboard', methods=['GET'])
 @token_required
@@ -45,6 +153,7 @@ def get_dashboard():
     focus_stats = focus_model.get_focus_stats(user_id)
     daily_summary = activity_model.get_daily_summary(user_id)
     hourly_data = activity_model.get_hourly_breakdown(user_id)
+    weekly_trends = activity_model.get_weekly_trends(user_id)
     
     # Calculate focus score from real data
     total_time = daily_summary.get('total_minutes', 0)
@@ -55,6 +164,38 @@ def get_dashboard():
         productive_time = sum(h.get('productive', 0) for h in hourly_data)
         distracted_time = sum(h.get('distracted', 0) for h in hourly_data)
         total_time = productive_time + distracted_time
+    
+    # If still empty, use weekly trends data
+    if total_time == 0 and weekly_trends:
+        productive_time = sum(d.get('productive_minutes', 0) for d in weekly_trends)
+        distracted_time = sum(d.get('distracting_minutes', 0) for d in weekly_trends)
+        total_time = productive_time + distracted_time
+    
+    # If STILL empty, get all-time totals from database
+    if total_time == 0:
+        from bson import ObjectId
+        user_id_str = str(user_id)
+        user_id_queries = [user_id_str]
+        try:
+            user_id_queries.append(ObjectId(user_id_str))
+        except:
+            pass
+        
+        pipeline = [
+            {'$match': {'user_id': {'$in': user_id_queries}}},
+            {'$group': {
+                '_id': '$category',
+                'total_minutes': {'$sum': '$duration_minutes'}
+            }}
+        ]
+        results = list(db.activities.aggregate(pipeline))
+        for r in results:
+            if r['_id'] == 'productive':
+                productive_time = r['total_minutes']
+            elif r['_id'] == 'distracting':
+                distracted_time = r.get('total_minutes', 0)
+        total_time = productive_time + distracted_time if 'distracted_time' in dir() else productive_time
+        total_time = sum(r.get('total_minutes', 0) for r in results)
     
     focus_score = round((productive_time / total_time * 100) if total_time > 0 else 0)
     
@@ -69,9 +210,12 @@ def get_dashboard():
         'focusStats': focus_stats,
         'dailySummary': daily_summary,
         'hourlyData': hourly_data,
+        'weeklyTrends': weekly_trends,
         'focusScore': focus_score,
         'distractionSpikes': distraction_spikes,
-        'hasData': total_time > 0
+        'hasData': total_time > 0,
+        'totalProductiveMinutes': productive_time,
+        'totalMinutes': total_time
     })
 
 @insights_bp.route('/forecast', methods=['GET'])
@@ -791,10 +935,16 @@ def get_realtime_predictions():
         arima_pred = None
         prophet_pred = None
         
+        # Generate fallback predictions for comparison
+        fallback_preds = _generate_fallback_predictions(weekly_trends if weekly_trends else [], periods)
+        
         try:
             lstm_pred = forecaster.predict_with_lstm(weekly_trends, periods)
             if lstm_pred and isinstance(lstm_pred, dict):
                 lstm_pred = _make_serializable(lstm_pred)
+                # Check if prediction has valid data
+                if not lstm_pred.get('forecast') or lstm_pred.get('average_predicted', 0) == 0:
+                    lstm_pred = None
         except Exception as e:
             print(f"LSTM prediction error: {e}")
             lstm_pred = None
@@ -803,6 +953,9 @@ def get_realtime_predictions():
             arima_pred = forecaster.predict_with_arima(weekly_trends, periods)
             if arima_pred and isinstance(arima_pred, dict):
                 arima_pred = _make_serializable(arima_pred)
+                # Check if prediction has valid data
+                if not arima_pred.get('forecast') or arima_pred.get('average_predicted', 0) == 0:
+                    arima_pred = None
         except Exception as e:
             print(f"ARIMA prediction error: {e}")
             arima_pred = None
@@ -811,9 +964,50 @@ def get_realtime_predictions():
             prophet_pred = forecaster.predict_with_prophet(weekly_trends, periods)
             if prophet_pred and isinstance(prophet_pred, dict):
                 prophet_pred = _make_serializable(prophet_pred)
+                # Check if prediction has valid data
+                if not prophet_pred.get('forecast') or prophet_pred.get('average_predicted', 0) == 0:
+                    prophet_pred = None
         except Exception as e:
             print(f"Prophet prediction error: {e}")
             prophet_pred = None
+        
+        # Wrap real ML predictions in the same format as fallback
+        # Frontend expects: model.predictions.forecast
+        def wrap_predictions(pred, fallback, name, model_type, description):
+            if pred and pred.get('forecast'):
+                # Real ML prediction - wrap it
+                return {
+                    'name': name,
+                    'type': model_type,
+                    'description': description,
+                    'predictions': pred  # pred already has 'forecast', 'average_predicted', etc.
+                }
+            else:
+                # Use fallback
+                return {
+                    'name': name,
+                    'type': model_type,
+                    'description': description,
+                    'predictions': fallback
+                }
+        
+        lstm_result = wrap_predictions(
+            lstm_pred, fallback_preds['lstm'],
+            'LSTM (Long Short-Term Memory)', 'Deep Learning',
+            'Captures complex non-linear patterns'
+        )
+        
+        arima_result = wrap_predictions(
+            arima_pred, fallback_preds['arima'],
+            'ARIMA', 'Statistical',
+            'Handles smooth trends and seasonal patterns'
+        )
+        
+        prophet_result = wrap_predictions(
+            prophet_pred, fallback_preds['prophet'],
+            'Prophet', 'Decomposition',
+            'Detects seasonal and holiday effects'
+        )
         
         return jsonify({
             'status': 'success',
@@ -821,9 +1015,9 @@ def get_realtime_predictions():
             'auto_trained': should_retrain,
             'next_training_at': ((activity_count // 20) + 1) * 20,
             'models': {
-                'lstm': lstm_pred,
-                'arima': arima_pred,
-                'prophet': prophet_pred
+                'lstm': lstm_result,
+                'arima': arima_result,
+                'prophet': prophet_result
             }
         })
         

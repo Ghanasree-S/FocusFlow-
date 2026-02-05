@@ -50,19 +50,19 @@ class TimeSeriesForecaster:
     
     def __init__(self, model_path: str = None):
         self.data_processor = DataProcessor()
-        self.model_path = model_path or os.path.join(os.path.dirname(__file__), 'saved_models')
+        self.model_path = model_path or os.path.join(os.path.dirname(__file__), 'models')
         
         # Initialize individual forecasters
         self.lstm_forecaster = LSTMForecaster(
-            model_path=os.path.join(self.model_path, 'lstm_forecaster.h5')
+            model_path=os.path.join(self.model_path, 'lstm_model.keras')
         )
         self.arima_forecaster = ARIMAForecaster(
-            model_path=os.path.join(self.model_path, 'arima_forecaster.pkl')
+            model_path=os.path.join(self.model_path, 'arima_model.pkl')
         )
         
         # Prophet model
         self.prophet_model = None
-        self.prophet_path = os.path.join(self.model_path, 'prophet_forecaster.pkl')
+        self.prophet_path = os.path.join(self.model_path, 'prophet_model.pkl')
         self._load_prophet()
         
         # Ensemble weights (can be updated based on model performance)

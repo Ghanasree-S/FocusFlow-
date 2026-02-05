@@ -45,7 +45,15 @@ class TaskModel:
     
     def get_user_tasks(self, user_id: str, completed: bool = None) -> list:
         """Get all tasks for a user"""
-        query = {'user_id': user_id}
+        # Query for BOTH ObjectId and string user_id
+        user_id_str = str(user_id)
+        user_id_queries = [user_id_str]
+        try:
+            user_id_queries.append(ObjectId(user_id_str))
+        except:
+            pass
+        
+        query = {'user_id': {'$in': user_id_queries}}
         if completed is not None:
             query['completed'] = completed
         
@@ -95,8 +103,16 @@ class TaskModel:
     
     def get_task_stats(self, user_id: str) -> dict:
         """Get task statistics for a user, including overdue tasks"""
+        # Query for BOTH ObjectId and string user_id
+        user_id_str = str(user_id)
+        user_id_queries = [user_id_str]
+        try:
+            user_id_queries.append(ObjectId(user_id_str))
+        except:
+            pass
+        
         pipeline = [
-            {'$match': {'user_id': user_id}},
+            {'$match': {'user_id': {'$in': user_id_queries}}},
             {'$group': {
                 '_id': None,
                 'total': {'$sum': 1},
@@ -109,7 +125,7 @@ class TaskModel:
         result = list(self.collection.aggregate(pipeline))
         
         # Count overdue tasks (deadline passed with completed=false)
-        tasks = list(self.collection.find({'user_id': user_id}))
+        tasks = list(self.collection.find({'user_id': {'$in': user_id_queries}}))
         overdue_count = sum(
             1 for t in tasks 
             if self._is_overdue(t.get('deadline', ''), t.get('completed', False))

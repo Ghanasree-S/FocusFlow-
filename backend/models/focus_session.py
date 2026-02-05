@@ -79,18 +79,19 @@ class FocusSessionModel:
     
     def get_focus_stats(self, user_id: str, days: int = 7) -> dict:
         """Get focus session statistics"""
-        # Convert to ObjectId if string
-        if isinstance(user_id, str):
-            try:
-                user_id = ObjectId(user_id)
-            except:
-                pass
+        # Query for BOTH ObjectId and string user_id
+        user_id_str = str(user_id)
+        user_id_queries = [user_id_str]
+        try:
+            user_id_queries.append(ObjectId(user_id_str))
+        except:
+            pass
         
         start_date = datetime.utcnow() - timedelta(days=days)
         
         pipeline = [
             {'$match': {
-                'user_id': user_id,
+                'user_id': {'$in': user_id_queries},
                 'start_time': {'$gte': start_date},
                 'end_time': {'$ne': None}
             }},

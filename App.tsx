@@ -25,6 +25,17 @@ const App: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Import trackerApi
+  const startTrackerForUser = async () => {
+    try {
+      const { trackerApi } = await import('./services/api');
+      await trackerApi.start();
+      console.log('🎯 Tracker started for logged-in user');
+    } catch (error) {
+      console.log('Tracker not available or already running');
+    }
+  };
+
   // Check for existing auth on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -38,6 +49,9 @@ const App: React.FC = () => {
           // Load tasks
           const { tasks: taskData } = await tasksApi.getAll();
           setTasks(taskData);
+
+          // Start tracker for this user
+          startTrackerForUser();
         } catch (error) {
           // Token invalid, clear it
           setAuthToken(null);
@@ -60,6 +74,9 @@ const App: React.FC = () => {
   const handleLogin = async (u: UserProfile) => {
     setUser(u);
     setView('ONBOARDING');
+
+    // Start tracker for this user
+    startTrackerForUser();
 
     // Load tasks after login
     try {

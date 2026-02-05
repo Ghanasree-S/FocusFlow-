@@ -47,17 +47,18 @@ class ActivityModel:
         """Get activities for the last N days"""
         from bson import ObjectId
         
-        # Convert to ObjectId if string
-        if isinstance(user_id, str):
-            try:
-                user_id = ObjectId(user_id)
-            except:
-                pass
-        
         start_date = datetime.utcnow() - timedelta(days=days)
         
+        # Query for BOTH ObjectId and string user_id (activities may be stored as either)
+        user_id_str = str(user_id)
+        user_id_queries = [user_id_str]
+        try:
+            user_id_queries.append(ObjectId(user_id_str))
+        except:
+            pass
+        
         activities = self.collection.find({
-            'user_id': user_id,
+            'user_id': {'$in': user_id_queries},
             'timestamp': {'$gte': start_date}
         }).sort('timestamp', -1)
         
@@ -67,12 +68,13 @@ class ActivityModel:
         """Get activity summary for a specific day"""
         from bson import ObjectId
         
-        # Convert to ObjectId if string
-        if isinstance(user_id, str):
-            try:
-                user_id = ObjectId(user_id)
-            except:
-                pass
+        # Query for BOTH ObjectId and string user_id
+        user_id_str = str(user_id)
+        user_id_queries = [user_id_str]
+        try:
+            user_id_queries.append(ObjectId(user_id_str))
+        except:
+            pass
         
         if date is None:
             date = datetime.utcnow()
@@ -82,7 +84,7 @@ class ActivityModel:
         
         pipeline = [
             {'$match': {
-                'user_id': user_id,
+                'user_id': {'$in': user_id_queries},
                 'timestamp': {'$gte': start_of_day, '$lt': end_of_day}
             }},
             {'$group': {
@@ -117,37 +119,80 @@ class ActivityModel:
         return summary
     
     def get_weekly_trends(self, user_id: str) -> list:
-        """Get weekly activity trends"""
+        """Get weekly activity trends - uses actual data dates"""
+        from bson import ObjectId
+        
+        # Query for BOTH ObjectId and string user_id
+        user_id_str = str(user_id)
+        user_id_queries = [user_id_str]
+        try:
+            user_id_queries.append(ObjectId(user_id_str))
+        except:
+            pass
+        
+        # First, try last 7 days
         trends = []
         for i in range(7):
             date = datetime.utcnow() - timedelta(days=i)
             summary = self.get_daily_summary(user_id, date)
             trends.append(summary)
         
-        return list(reversed(trends))
+        # If all empty, get the most recent 7 days that have data
+        total_data = sum(t.get('total_minutes', 0) for t in trends)
+        
+        if total_data == 0:
+            # Get dates that have activity data
+            pipeline = [
+                {'$match': {'user_id': {'$in': user_id_queries}}},
+                {'$group': {
+                    '_id': {'$dateToString': {'format': '%Y-%m-%d', 'date': '$timestamp'}},
+                    'productive': {'$sum': {'$cond': [{'$eq': ['$category', 'productive']}, '$duration_minutes', 0]}},
+                    'distracting': {'$sum': {'$cond': [{'$eq': ['$category', 'distracting']}, '$duration_minutes', 0]}},
+                    'neutral': {'$sum': {'$cond': [{'$eq': ['$category', 'neutral']}, '$duration_minutes', 0]}}
+                }},
+                {'$sort': {'_id': -1}},
+                {'$limit': 7}
+            ]
+            
+            results = list(self.collection.aggregate(pipeline))
+            
+            if results:
+                trends = []
+                for r in reversed(results):  # Oldest first
+                    total = r.get('productive', 0) + r.get('distracting', 0) + r.get('neutral', 0)
+                    trends.append({
+                        'date': r['_id'],
+                        'productive_minutes': r.get('productive', 0),
+                        'distracting_minutes': r.get('distracting', 0),
+                        'neutral_minutes': r.get('neutral', 0),
+                        'total_minutes': total
+                    })
+        
+        return trends if any(t.get('total_minutes', 0) > 0 for t in trends) else list(reversed(trends))
     
     def get_hourly_breakdown(self, user_id: str, days: int = 7) -> list:
         """Get hourly activity breakdown"""
         from bson import ObjectId
         
-        # Convert to ObjectId if string
-        if isinstance(user_id, str):
-            try:
-                user_id = ObjectId(user_id)
-            except:
-                pass
+        # Query for BOTH ObjectId and string user_id
+        user_id_str = str(user_id)
+        user_id_queries = [user_id_str]
+        try:
+            user_id_queries.append(ObjectId(user_id_str))
+        except:
+            pass
         
         start_date = datetime.utcnow() - timedelta(days=days)
         
         pipeline = [
             {'$match': {
-                'user_id': user_id,
+                'user_id': {'$in': user_id_queries},
                 'timestamp': {'$gte': start_date}
             }},
             {'$group': {
                 '_id': {'$hour': '$timestamp'},
-                'productive': {'$sum': {'$cond': ['$is_productive', '$duration_minutes', 0]}},
-                'distracted': {'$sum': {'$cond': ['$is_productive', 0, '$duration_minutes']}}
+                'productive': {'$sum': {'$cond': [{'$eq': ['$category', 'productive']}, '$duration_minutes', 0]}},
+                'distracted': {'$sum': {'$cond': [{'$eq': ['$category', 'distracting']}, '$duration_minutes', 0]}}
             }},
             {'$sort': {'_id': 1}}
         ]
@@ -170,17 +215,18 @@ class ActivityModel:
         """Get top apps by duration, optionally filtered by category"""
         from bson import ObjectId
         
-        # Convert to ObjectId if string
-        if isinstance(user_id, str):
-            try:
-                user_id = ObjectId(user_id)
-            except:
-                pass
+        # Query for BOTH ObjectId and string user_id
+        user_id_str = str(user_id)
+        user_id_queries = [user_id_str]
+        try:
+            user_id_queries.append(ObjectId(user_id_str))
+        except:
+            pass
         
         start_date = datetime.utcnow() - timedelta(days=days)
         
         match_stage = {
-            'user_id': user_id,
+            'user_id': {'$in': user_id_queries},
             'timestamp': {'$gte': start_date}
         }
         
@@ -192,7 +238,7 @@ class ActivityModel:
             {'$group': {
                 '_id': '$app_name',
                 'total_minutes': {'$sum': '$duration_minutes'},
-                'count': {'$sum': 1}
+                'sessions': {'$sum': 1}
             }},
             {'$sort': {'total_minutes': -1}},
             {'$limit': 10}
@@ -204,7 +250,7 @@ class ActivityModel:
             {
                 'app_name': r['_id'],
                 'total_minutes': r['total_minutes'],
-                'count': r['count']
+                'sessions': r['sessions']
             }
             for r in results
         ]

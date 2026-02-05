@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from flask import Flask, jsonify
 from flask_cors import CORS
 from config import Config
-from routes import auth_bp, tasks_bp, activities_bp, focus_bp, insights_bp
+from routes import auth_bp, tasks_bp, activities_bp, focus_bp, insights_bp, tracker_bp
 
 # Activity Tracker Imports
 import requests
@@ -43,9 +43,12 @@ PRODUCTIVE_APPS = [
 ]
 
 DISTRACTING_APPS = [
-    'youtube', 'netflix', 'prime video', 'disney', 'twitch', 'tiktok',
-    'twitter', 'facebook', 'instagram', 'reddit', 'whatsapp', 'telegram',
-    'discord', 'games', 'steam', 'epic games', 'spotify', 'vlc', 'media player'
+    'youtube', 'netflix', 'prime video', 'disney', 'disney+', 'hotstar', 'hulu', 'hbo',
+    'twitch', 'tiktok', 'crunchyroll',
+    'twitter', 'x.com', 'facebook', 'instagram', 'reddit', 'snapchat', 'pinterest', 'tumblr',
+    'whatsapp', 'telegram', 'discord', 'messenger',
+    'games', 'steam', 'epic games', 'spotify', 'vlc', 'media player', 'soundcloud',
+    'amazon', 'ebay', 'shopping', 'flipkart', 'myntra'
 ]
 
 def categorize_app(app_name: str) -> str:
@@ -66,30 +69,74 @@ BROWSERS = ['google chrome', 'chrome', 'firefox', 'mozilla', 'edge', 'safari', '
 
 # Keywords to detect websites from window title
 WEBSITE_KEYWORDS = {
+    # Streaming/Entertainment (Distracting)
     'youtube': 'YouTube',
     'netflix': 'Netflix',
+    'prime video': 'Prime Video',
+    'primevideo': 'Prime Video',
+    'amazon.com/gp/video': 'Prime Video',
+    'disney+': 'Disney+',
+    'disneyplus': 'Disney+',
+    'hotstar': 'Hotstar',
+    'hulu': 'Hulu',
+    'hbo max': 'HBO Max',
+    'twitch': 'Twitch',
+    'crunchyroll': 'Crunchyroll',
+    'spotify': 'Spotify',
+    'soundcloud': 'SoundCloud',
+    
+    # Social Media (Distracting)
     'twitter': 'Twitter',
+    'x.com': 'Twitter/X',
     'facebook': 'Facebook',
     'instagram': 'Instagram',
     'reddit': 'Reddit',
-    'twitch': 'Twitch',
+    'tiktok': 'TikTok',
+    'snapchat': 'Snapchat',
+    'pinterest': 'Pinterest',
+    'tumblr': 'Tumblr',
+    
+    # Messaging (Distracting)
     'discord': 'Discord',
     'whatsapp': 'WhatsApp',
     'telegram': 'Telegram',
+    'messenger': 'Messenger',
+    
+    # Productivity (Productive)
     'linkedin': 'LinkedIn',
     'github': 'GitHub',
+    'gitlab': 'GitLab',
     'stackoverflow': 'Stack Overflow',
+    'stack overflow': 'Stack Overflow',
     'gmail': 'Gmail',
     'outlook': 'Outlook',
     'docs.google': 'Google Docs',
     'sheets.google': 'Google Sheets',
     'drive.google': 'Google Drive',
+    'slides.google': 'Google Slides',
+    'notion.so': 'Notion',
     'notion': 'Notion',
-    'spotify': 'Spotify',
-    'amazon prime': 'Amazon Prime',
-    'hotstar': 'Hotstar',
+    'figma': 'Figma',
+    'canva': 'Canva',
+    'trello': 'Trello',
+    'asana': 'Asana',
+    'jira': 'Jira',
+    'confluence': 'Confluence',
+    'google calendar': 'Google Calendar',
+    'calendar.google': 'Google Calendar',
+    
+    # AI Tools (Productive)
     'chatgpt': 'ChatGPT',
-    'claude': 'Claude AI'
+    'claude': 'Claude AI',
+    'gemini': 'Google Gemini',
+    'copilot': 'GitHub Copilot',
+    'perplexity': 'Perplexity AI',
+    
+    # Shopping (Distracting)
+    'amazon': 'Amazon',
+    'flipkart': 'Flipkart',
+    'ebay': 'eBay',
+    'myntra': 'Myntra'
 }
 
 def extract_website_from_title(title: str) -> str:
@@ -114,18 +161,47 @@ def get_active_window():
         active_window = gw.getActiveWindow()
         if active_window:
             title = active_window.title
+            title_lower = title.lower()
             
-            # Try to extract website name first
+            # Try to extract website name first (known sites)
             website = extract_website_from_title(title)
             if website:
                 return {'title': title, 'app_name': website}
             
-            # Otherwise extract app name from title
+            # Check if it's a browser window
+            is_browser = any(browser in title_lower for browser in BROWSERS)
+            
+            if is_browser and ' - ' in title:
+                parts = title.split(' - ')
+                # Remove browser name from the end
+                browser_names = ['google chrome', 'chrome', 'firefox', 'mozilla firefox', 
+                               'microsoft edge', 'edge', 'safari', 'opera', 'brave']
+                
+                # Filter out browser names and get page title
+                cleaned_parts = []
+                for part in parts:
+                    if part.strip().lower() not in browser_names:
+                        cleaned_parts.append(part.strip())
+                
+                if cleaned_parts:
+                    # Get the first part (usually page title) or the most meaningful one
+                    app_name = cleaned_parts[0]
+                    # If first part is very short, try the second
+                    if len(app_name) <= 3 and len(cleaned_parts) > 1:
+                        app_name = cleaned_parts[1]
+                    return {'title': title, 'app_name': app_name}
+                else:
+                    # All parts were browser names, use full title first part
+                    return {'title': title, 'app_name': parts[0].strip()}
+            
+            # Not a browser or no ' - ' separator
             if ' - ' in title:
                 parts = title.split(' - ')
+                # For non-browser apps, last part is usually app name
                 app_name = parts[-1].strip()
             else:
                 app_name = title
+            
             return {'title': title, 'app_name': app_name}
     except:
         pass
@@ -161,27 +237,20 @@ def log_activity(token: str, app_name: str, duration_minutes: float, category: s
         print(f"[TRACKER] API error: {e}", flush=True)
     return False
 
-def run_tracker_thread(email: str, password: str, interval: int = 10):
-    """Background tracker thread - logs every 10 seconds"""
+# Global tracker state
+active_tracker = {
+    'running': False,
+    'token': None,
+    'user_email': None,
+    'thread': None
+}
+
+def run_tracker_thread_with_token(token: str, user_email: str, interval: int = 10):
+    """Background tracker thread - uses provided token"""
+    global active_tracker
+    
     print("", flush=True)
-    print("🎯 ACTIVITY TRACKER: Waiting for server...", flush=True)
-    time.sleep(3)
-    
-    token = None
-    retry_count = 0
-    
-    while not token and retry_count < 5:
-        token = tracker_login(email, password)
-        if not token:
-            retry_count += 1
-            print(f"🎯 ACTIVITY TRACKER: Login attempt {retry_count}/5...", flush=True)
-            time.sleep(2)
-    
-    if not token:
-        print("🎯 ACTIVITY TRACKER: ❌ Login failed!", flush=True)
-        return
-    
-    print("🎯 ACTIVITY TRACKER: ✅ Login successful!", flush=True)
+    print(f"🎯 ACTIVITY TRACKER: Started for {user_email}", flush=True)
     print(f"🎯 ACTIVITY TRACKER: 📊 Tracking every {interval} seconds", flush=True)
     print("=" * 70, flush=True)
     print("TIME      | CURRENT WINDOW                              | STATUS", flush=True)
@@ -208,13 +277,18 @@ def run_tracker_thread(email: str, password: str, interval: int = 10):
                     prev_category = categorize_app(current_app)
                     
                     if duration >= 0.05:
-                        success = log_activity(token, current_app, round(duration, 2), prev_category)
+                        success = log_activity(active_tracker['token'], current_app, round(duration, 2), prev_category)
                         if success:
                             records_saved += 1
                             prev_emoji = get_category_emoji(prev_category)
                             print(f"[{ts}] | 💾 SAVED TO DB: {current_app[:30]} | {prev_emoji} {duration:.2f}min (#{records_saved})", flush=True)
                     
                     app_start_time = time.time()
+            
+            # Check if tracker should stop
+            if not active_tracker['running']:
+                print(f"[{ts}] | 🛑 TRACKER STOPPED", flush=True)
+                break
                 
                 current_app = window_info['app_name']
             else:
@@ -293,6 +367,7 @@ def create_app():
     app.register_blueprint(activities_bp)
     app.register_blueprint(focus_bp)
     app.register_blueprint(insights_bp)
+    app.register_blueprint(tracker_bp)
     
     @app.route('/api/health', methods=['GET'])
     def health_check():
@@ -335,14 +410,9 @@ if __name__ == '__main__':
     print("   GET  /api/insights/forecast", flush=True)
     print("=" * 70, flush=True)
     
-    # Start tracker
+    # Tracker will start when user logs in via API
     if TRACKER_AVAILABLE:
-        tracker_thread = threading.Thread(
-            target=run_tracker_thread,
-            args=('demo@focusflow.ai', 'demo123', 60),
-            daemon=True
-        )
-        tracker_thread.start()
+        print("🎯 ACTIVITY TRACKER: Ready (starts when user logs in)", flush=True)
     else:
         print("⚠️  Install pygetwindow: pip install pygetwindow", flush=True)
     
