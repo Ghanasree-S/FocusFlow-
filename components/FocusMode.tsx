@@ -158,7 +158,7 @@ const FocusMode: React.FC = () => {
       'tab-switch': 'You switched away from the app. Stay focused!',
       'keyboard-shortcut': 'Blocked an attempt to open a new tab/window.',
       'idle-detected': 'You seem idle. Need to refocus?',
-      'rapid-switching': 'Rapid context switching detected â€” take a breath.',
+      'rapid-switching': 'Rapid context switching detected — take a breath.',
     };
 
     setDistractionAlert({
@@ -184,7 +184,7 @@ const FocusMode: React.FC = () => {
 
     // Browser notification for critical
     if (severity === 'critical' && 'Notification' in window && Notification.permission === 'granted') {
-      new Notification('ChronosAI â€” Distraction Alert', {
+      new Notification('ChronosAI — Distraction Alert', {
         body: 'Multiple distractions detected! Stay focused on your task.',
         icon: '/favicon.ico',
         tag: 'distraction-alert',
@@ -201,7 +201,7 @@ const FocusMode: React.FC = () => {
       if (!document.hidden && hiddenTime > 0) {
         const awayDuration = (Date.now() - hiddenTime) / 1000;
         if (awayDuration > 5) {
-          // User was away for more than 5 seconds â€” show refocus prompt
+          // User was away for more than 5 seconds — show refocus prompt
           setShowRefocusPrompt(true);
           triggerDistractionAlert('tab-switch');
         }
@@ -477,7 +477,7 @@ const FocusMode: React.FC = () => {
             {/* Tip from distraction patterns */}
             {distractionPatterns?.top_distractions?.length > 0 && (
               <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-3">
-                <p className="text-xs font-bold text-amber-700 dark:text-amber-400">ðŸ’¡ Tip</p>
+                <p className="text-xs font-bold text-amber-700 dark:text-amber-400">💡 Tip</p>
                 <p className="text-xs text-amber-600 dark:text-amber-300 mt-1">
                   Your top distractor is "{distractionPatterns.top_distractions[0]?.name || distractionPatterns.top_distractions[0]?.app}". Consider blocking it during focus sessions.
                 </p>
@@ -497,7 +497,7 @@ const FocusMode: React.FC = () => {
       {isActive && sessionType === 'Work' && (
         <div className="fixed top-0 left-0 right-0 bg-indigo-600 text-white text-center py-1.5 text-xs font-bold z-40 flex items-center justify-center gap-2">
           <ShieldCheck className="w-3.5 h-3.5" />
-          Focus Shield Active â€” {activeBlockedCount} apps blocked Â· {blockedCount} distractions blocked
+          Focus Shield Active — {activeBlockedCount} apps blocked · {blockedCount} distractions blocked
           {soundMuted && <VolumeX className="w-3.5 h-3.5 ml-2" />}
         </div>
       )}
@@ -689,7 +689,7 @@ const FocusMode: React.FC = () => {
                 <div className="flex gap-2 flex-wrap">
                   {distractionPatterns.peak_hours.slice(0, 5).map((h: any, i: number) => (
                     <span key={i} className="text-xs px-3 py-1.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-lg font-bold">
-                      {h.time || h.hour || `${i + 1}`} â€” {h.distracted || h.minutes || 0}min
+                      {h.time || h.hour || `${i + 1}`} — {h.distracted || h.minutes || 0}min
                     </span>
                   ))}
                 </div>

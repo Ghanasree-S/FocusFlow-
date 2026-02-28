@@ -301,10 +301,10 @@ const Wellness: React.FC = () => {
               <div className="space-y-5">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
-                    { label: 'Mood â†’ Productivity', value: correlation.mood_productivity, icon: Smile, expectedSign: '+' },
-                    { label: 'Stress â†’ Productivity', value: correlation.stress_productivity, icon: AlertTriangle, expectedSign: '-' },
-                    { label: 'Sleep â†’ Productivity', value: correlation.sleep_productivity, icon: Moon, expectedSign: '+' },
-                    { label: 'Energy â†’ Productivity', value: correlation.energy_productivity, icon: Zap, expectedSign: '+' },
+                    { label: 'Mood → Productivity', value: correlation.mood_productivity, icon: Smile, expectedSign: '+' },
+                    { label: 'Stress → Productivity', value: correlation.stress_productivity, icon: AlertTriangle, expectedSign: '-' },
+                    { label: 'Sleep → Productivity', value: correlation.sleep_productivity, icon: Moon, expectedSign: '+' },
+                    { label: 'Energy → Productivity', value: correlation.energy_productivity, icon: Zap, expectedSign: '+' },
                   ].map((item, i) => (
                     <div key={i} className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center space-y-1">
                       <item.icon className={`w-5 h-5 mx-auto ${getCorrelationColor(item.value)}`} />

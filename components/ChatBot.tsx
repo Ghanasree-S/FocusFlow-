@@ -151,35 +151,35 @@ Use this data to personalize your response.`
     if (lower.includes('focus score') || lower.includes('improve focus')) {
       return `Based on your data, here are personalized tips to improve your focus:
 
-${focusScore !== undefined ? `â€¢ Your current focus score is **${focusScore}%**. ${focusScore < 50 ? 'This needs improvement.' : focusScore < 75 ? 'Good, but room to grow.' : 'Excellent work!'}` : ''}
-â€¢ **Use the Pomodoro technique** â€” 25 min focus + 5 min break
-â€¢ **Block distracting apps** during work sessions using Focus Mode
-â€¢ **Schedule deep work** during your peak productivity hours
-${distractionSpikes !== undefined && distractionSpikes > 3 ? `â€¢ You had **${distractionSpikes} distraction spikes** today â€” try reducing context switching` : ''}
-â€¢ Start with your hardest task first (eat the frog)`;
+${focusScore !== undefined ? `• Your current focus score is **${focusScore}%**. ${focusScore < 50 ? 'This needs improvement.' : focusScore < 75 ? 'Good, but room to grow.' : 'Excellent work!'}` : ''}
+• **Use the Pomodoro technique** — 25 min focus + 5 min break
+• **Block distracting apps** during work sessions using Focus Mode
+• **Schedule deep work** during your peak productivity hours
+${distractionSpikes !== undefined && distractionSpikes > 3 ? `• You had **${distractionSpikes} distraction spikes** today — try reducing context switching` : ''}
+• Start with your hardest task first (eat the frog)`;
     }
 
     if (lower.includes('pattern') || lower.includes('analyze') || lower.includes('productivity')) {
       return `Here's your productivity analysis:
 
-${tasksCompleted !== undefined ? `â€¢ **Tasks**: ${tasksCompleted}/${totalTasks} completed (${totalTasks ? Math.round((tasksCompleted/totalTasks)*100) : 0}% completion rate)` : 'â€¢ Track tasks to see completion data'}
-${weeklyProductiveMinutes !== undefined ? `â€¢ **Weekly Productive Time**: ${Math.round(weeklyProductiveMinutes)} minutes (${Math.round(weeklyProductiveMinutes/60)}h)` : ''}
-${focusScore !== undefined ? `â€¢ **Focus Score**: ${focusScore}%` : ''}
-${distractionSpikes !== undefined ? `â€¢ **Distraction Spikes**: ${distractionSpikes} today` : ''}
+${tasksCompleted !== undefined ? `• **Tasks**: ${tasksCompleted}/${totalTasks} completed (${totalTasks ? Math.round((tasksCompleted/totalTasks)*100) : 0}% completion rate)` : '• Track tasks to see completion data'}
+${weeklyProductiveMinutes !== undefined ? `• **Weekly Productive Time**: ${Math.round(weeklyProductiveMinutes)} minutes (${Math.round(weeklyProductiveMinutes/60)}h)` : ''}
+${focusScore !== undefined ? `• **Focus Score**: ${focusScore}%` : ''}
+${distractionSpikes !== undefined ? `• **Distraction Spikes**: ${distractionSpikes} today` : ''}
 
 **Recommendations:**
-â€¢ ${weeklyProductiveMinutes !== undefined && weeklyProductiveMinutes < 300 ? 'Aim for at least 5 hours of productive time this week' : 'Great productive output! Maintain this momentum'}
-â€¢ Review your Analytics page for detailed day-by-day comparison`;
+• ${weeklyProductiveMinutes !== undefined && weeklyProductiveMinutes < 300 ? 'Aim for at least 5 hours of productive time this week' : 'Great productive output! Maintain this momentum'}
+• Review your Analytics page for detailed day-by-day comparison`;
     }
 
     if (lower.includes('deep work') || lower.includes('best time')) {
       return `Finding your optimal deep work time:
 
-â€¢ **Check your Analytics page** â†’ Performance Analytics shows your peak productivity hours
-â€¢ Most people focus best in the **morning (9-11 AM)** or **late afternoon (3-5 PM)**
-â€¢ **Block 2-3 hours** for uninterrupted deep work
-â€¢ Turn on **Focus Mode** with app blocking during these windows
-â€¢ Avoid scheduling meetings during your peak hours
+• **Check your Analytics page** → Performance Analytics shows your peak productivity hours
+• Most people focus best in the **morning (9-11 AM)** or **late afternoon (3-5 PM)**
+• **Block 2-3 hours** for uninterrupted deep work
+• Turn on **Focus Mode** with app blocking during these windows
+• Avoid scheduling meetings during your peak hours
 
 Use the "Focus Windows" feature in Analytics to see your personal best times based on tracked data.`;
     }
@@ -187,34 +187,34 @@ Use the "Focus Windows" feature in Analytics to see your personal best times bas
     if (lower.includes('distraction') || lower.includes('procrastinat')) {
       return `Strategies to beat distractions:
 
-${distractionSpikes !== undefined && distractionSpikes > 0 ? `â€¢ You have **${distractionSpikes} distraction spikes** â€” let's reduce this!` : ''}
-â€¢ **Enable Focus Mode** â€” it blocks apps and tracks distraction attempts
-â€¢ **2-Minute Rule**: If a task takes <2 min, do it now. Otherwise, schedule it
-â€¢ **Environment design**: Remove phone from workspace, use noise-canceling headphones
-â€¢ **Batch social media** into specific time slots (e.g., 12 PM and 6 PM)
-â€¢ **Use the Pomodoro timer** â€” knowing a break is coming reduces urge to check phone`;
+${distractionSpikes !== undefined && distractionSpikes > 0 ? `• You have **${distractionSpikes} distraction spikes** — let's reduce this!` : ''}
+• **Enable Focus Mode** — it blocks apps and tracks distraction attempts
+• **2-Minute Rule**: If a task takes <2 min, do it now. Otherwise, schedule it
+• **Environment design**: Remove phone from workspace, use noise-canceling headphones
+• **Batch social media** into specific time slots (e.g., 12 PM and 6 PM)
+• **Use the Pomodoro timer** — knowing a break is coming reduces urge to check phone`;
     }
 
     if (lower.includes('task') || lower.includes('priorit')) {
       return `Task management tips:
 
-${tasksCompleted !== undefined ? `â€¢ You've completed **${tasksCompleted} of ${totalTasks}** tasks â€” ${totalTasks && tasksCompleted/totalTasks > 0.7 ? 'great progress!' : 'keep pushing!'}` : ''}
-â€¢ **Eisenhower Matrix**: Categorize by Urgent/Important
-â€¢ **3-Task Rule**: Pick 3 must-do tasks each morning
-â€¢ **Time-block** your calendar for specific task categories
-â€¢ Break large tasks into **sub-tasks under 30 minutes**
-â€¢ Use the Task Manager to set priorities and deadlines`;
+${tasksCompleted !== undefined ? `• You've completed **${tasksCompleted} of ${totalTasks}** tasks — ${totalTasks && tasksCompleted/totalTasks > 0.7 ? 'great progress!' : 'keep pushing!'}` : ''}
+• **Eisenhower Matrix**: Categorize by Urgent/Important
+• **3-Task Rule**: Pick 3 must-do tasks each morning
+• **Time-block** your calendar for specific task categories
+• Break large tasks into **sub-tasks under 30 minutes**
+• Use the Task Manager to set priorities and deadlines`;
     }
 
     if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) {
       return `Hey! 👋 I'm your ChronosAI productivity coach.
 
 I can help you with:
-â€¢ ðŸ“Š Analyzing your productivity patterns
-â€¢ ðŸŽ¯ Improving your focus score
-â€¢ â° Finding your best deep work times
-â€¢ ðŸš« Reducing distractions
-â€¢ âœ… Managing tasks effectively
+• Analyzing your productivity patterns
+• Improving your focus score
+• Finding your best deep work times
+• Reducing distractions
+• Managing tasks effectively
 
 What would you like to work on?`;
     }
@@ -222,11 +222,11 @@ What would you like to work on?`;
     // Default response
     return `Great question! Here are some general productivity tips:
 
-â€¢ **Track consistently** â€” use ChronosAI's tracker to build a data baseline
-â€¢ **Review weekly** â€” check your Reports page every Sunday
-â€¢ **Set 3 daily goals** â€” use the Task Manager with priorities
-â€¢ **Focus sessions** â€” aim for at least 3 Pomodoro sessions per day
-â€¢ **Celebrate wins** â€” acknowledge completed tasks and streaks
+• **Track consistently** — use ChronosAI's tracker to build a data baseline
+• **Review weekly** — check your Reports page every Sunday
+• **Set 3 daily goals** — use the Task Manager with priorities
+• **Focus sessions** — aim for at least 3 Pomodoro sessions per day
+• **Celebrate wins** — acknowledge completed tasks and streaks
 
 Want me to analyze something specific? Try asking about your focus score, distraction patterns, or task completion rate.`;
   };
@@ -294,7 +294,7 @@ Want me to analyze something specific? Try asking about your focus score, distra
               <Sparkles className="w-3 h-3 text-indigo-500" />
               AI-powered productivity insights
               {contextLoaded && Object.keys(productivityContext).length > 0 && (
-                <span className="ml-1 text-emerald-500">â€¢ Context loaded</span>
+                <span className="ml-1 text-emerald-500">• Context loaded</span>
               )}
             </p>
           </div>
@@ -361,10 +361,10 @@ Want me to analyze something specific? Try asking about your focus score, distra
                   }`}>
                     {msg.content.split('\n').map((line, i) => (
                       <React.Fragment key={i}>
-                        {line.startsWith('â€¢') || line.startsWith('-') ? (
+                        {line.startsWith('•') || line.startsWith('-') ? (
                           <div className="flex items-start gap-1.5 my-0.5">
-                            <span className="mt-0.5">â€¢</span>
-                            <span>{line.replace(/^[â€¢-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1')}</span>
+                            <span className="mt-0.5">•</span>
+                            <span>{line.replace(/^[•-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1')}</span>
                           </div>
                         ) : (
                           <>

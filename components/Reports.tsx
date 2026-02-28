@@ -167,7 +167,7 @@ Focus Score,${report.focusScore}%`;
   const handleGenerateReport = () => {
     if (!report) return;
     const newReport = {
-      title: `${period === 'weekly' ? 'Weekly' : 'Monthly'} Summary â€“ ${report.periodLabel}`,
+      title: `${period === 'weekly' ? 'Weekly' : 'Monthly'} Summary — ${report.periodLabel}`,
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       type: period === 'weekly' ? 'Weekly' : 'Monthly',
       data: { ...report },

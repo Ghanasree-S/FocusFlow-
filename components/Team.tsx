@@ -322,7 +322,7 @@ const Team: React.FC = () => {
           <div className="space-y-2">
             {sortedMembers.map((member, i) => {
               const isMe = member.id === currentUserId;
-              const medal = i === 0 ? 'ðŸ¥‡' : i === 1 ? 'ðŸ¥ˆ' : i === 2 ? 'ðŸ¥‰' : `${i + 1}.`;
+              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
               return (
                 <div
                   key={member.id}

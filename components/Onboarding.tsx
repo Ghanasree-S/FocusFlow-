@@ -140,7 +140,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             </div>
             <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl border border-indigo-200 dark:border-indigo-600/30">
               <p className="text-[10px] text-indigo-600 dark:text-indigo-400">
-                <strong>Privacy Note:</strong> All data is stored locally and on your private MongoDB instance. You can change these preferences anytime in Settings â†’ Privacy.
+                <strong>Privacy Note:</strong> All data is stored locally and on your private MongoDB instance. You can change these preferences anytime in Settings → Privacy.
               </p>
             </div>
           </div>
