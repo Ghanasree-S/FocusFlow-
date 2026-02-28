@@ -304,6 +304,13 @@ export const insightsApi = {
             method: 'POST',
         });
     },
+
+    chat: async (message: string, context: string) => {
+        return await apiRequest('/insights/chat', {
+            method: 'POST',
+            body: JSON.stringify({ message, context }),
+        });
+    },
 };
 
 // ============ TRACKER API ============

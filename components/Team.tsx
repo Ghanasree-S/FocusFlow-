@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import React, { useState, useEffect, useCallback } from 'react';
+import { teamApi } from '../services/api';
 import {
   Users,
   Plus,
@@ -43,14 +44,7 @@ interface TeamData {
   avg_productivity: number;
 }
 
-const API_BASE = 'http://localhost:5000/api';
-const getToken = () => sessionStorage.getItem('ChronosAI_token');
-const getHeaders = () => {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  const token = getToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-  return headers;
-};
+
 
 const Team: React.FC = () => {
   const [team, setTeam] = useState<TeamData | null>(null);
@@ -65,15 +59,14 @@ const Team: React.FC = () => {
 
   const fetchTeam = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/team/dashboard`, { headers: getHeaders() });
-      if (res.ok) {
-        const data = await res.json();
-        setTeam(data);
-      } else if (res.status === 404) {
+      const data = await teamApi.dashboard();
+      setTeam(data);
+    } catch (e: any) {
+      if (e.message?.includes('not found') || e.message?.includes('404')) {
         setTeam(null);
+      } else {
+        console.error('Failed to fetch team:', e);
       }
-    } catch (e) {
-      console.error('Failed to fetch team:', e);
     } finally {
       setIsLoading(false);
     }
@@ -86,19 +79,10 @@ const Team: React.FC = () => {
     setActionLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_BASE}/team/create`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ name: teamName }),
-      });
-      if (res.ok) {
-        setShowCreate(false);
-        setTeamName('');
-        await fetchTeam();
-      } else {
-        const data = await res.json();
-        setError(data.error || 'Failed to create team');
-      }
+      await teamApi.create(teamName);
+      setShowCreate(false);
+      setTeamName('');
+      await fetchTeam();
     } catch (e) {
       setError('Network error');
     } finally {
@@ -111,19 +95,10 @@ const Team: React.FC = () => {
     setActionLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_BASE}/team/join`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ invite_code: inviteCode }),
-      });
-      if (res.ok) {
-        setShowJoin(false);
-        setInviteCode('');
-        await fetchTeam();
-      } else {
-        const data = await res.json();
-        setError(data.error || 'Invalid invite code');
-      }
+      await teamApi.join(inviteCode);
+      setShowJoin(false);
+      setInviteCode('');
+      await fetchTeam();
     } catch (e) {
       setError('Network error');
     } finally {
@@ -135,13 +110,8 @@ const Team: React.FC = () => {
     if (!window.confirm('Leave this team?')) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/team/leave`, {
-        method: 'POST',
-        headers: getHeaders(),
-      });
-      if (res.ok) {
-        setTeam(null);
-      }
+      await teamApi.leave();
+      setTeam(null);
     } catch (e) {
       console.error('Failed to leave team:', e);
     } finally {
@@ -280,7 +250,8 @@ const Team: React.FC = () => {
 
   // Team dashboard
   const sortedMembers = [...team.members].sort((a, b) => b.productive_minutes - a.productive_minutes);
-  const currentUserId = JSON.parse(atob(getToken()?.split('.')[1] || 'e30=')).id || '';
+  const token = sessionStorage.getItem('ChronosAI_token');
+  const currentUserId = JSON.parse(atob(token?.split('.')[1] || 'e30=')).id || '';
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

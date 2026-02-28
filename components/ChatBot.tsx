@@ -132,17 +132,8 @@ Use this data to personalize your response.`
 
     try {
       // Use backend Gemini endpoint or fall back to rule-based responses
-      const response = await fetch('http://localhost:5000/api/insights/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStorage.getItem('ChronosAI_token')}`,
-        },
-        body: JSON.stringify({ message: userMessage, context: fullPrompt }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
+      const data = await insightsApi.chat(userMessage, fullPrompt);
+      if (data) {
         return data.response || data.reply || data.message;
       }
     } catch {

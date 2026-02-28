@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import React, { useState, useEffect } from 'react';
-import { insightsApi } from '../services/api';
+import { insightsApi, wellnessApi } from '../services/api';
 import {
   Heart,
   Smile,
@@ -59,8 +59,7 @@ const MOOD_ICONS = [
   { level: 5, icon: Sun, label: 'Great', color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-500/10' },
 ];
 
-const API_BASE = 'http://localhost:5000/api';
-const getToken = () => sessionStorage.getItem('ChronosAI_token');
+
 
 const Wellness: React.FC = () => {
   const [todayMood, setTodayMood] = useState<MoodLevel | null>(null);
@@ -78,13 +77,9 @@ const Wellness: React.FC = () => {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const token = getToken();
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
         const [historyRes, correlationRes, dashboardData] = await Promise.all([
-          fetch(`${API_BASE}/insights/mood/history?days=14`, { headers }).then(r => r.ok ? r.json() : { entries: [] }),
-          fetch(`${API_BASE}/insights/mood/correlation`, { headers }).then(r => r.ok ? r.json() : null),
+          wellnessApi.getMoodHistory(14).catch(() => ({ entries: [] })),
+          wellnessApi.getCorrelation().catch(() => null),
           insightsApi.getDashboard().catch(() => null),
         ]);
 
@@ -115,33 +110,23 @@ const Wellness: React.FC = () => {
     if (!todayMood) return;
     setIsSaving(true);
     try {
-      const token = getToken();
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch(`${API_BASE}/insights/mood/log`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          mood: todayMood,
-          energy: todayEnergy,
-          stress: todayStress,
-          sleep_hours: sleepHours,
-          note: moodNote,
-        }),
+      await wellnessApi.logMood({
+        mood: todayMood,
+        energy: todayEnergy,
+        stress: todayStress,
+        sleep_hours: sleepHours,
+        note: moodNote,
       });
 
-      if (res.ok) {
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
-        // Refresh history and correlation
-        const [historyRes, correlationRes] = await Promise.all([
-          fetch(`${API_BASE}/insights/mood/history?days=14`, { headers }).then(r => r.ok ? r.json() : { entries: [] }),
-          fetch(`${API_BASE}/insights/mood/correlation`, { headers }).then(r => r.ok ? r.json() : null),
-        ]);
-        setMoodHistory(historyRes.entries || []);
-        setCorrelation(correlationRes);
-      }
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      // Refresh history and correlation
+      const [historyRes, correlationRes] = await Promise.all([
+        wellnessApi.getMoodHistory(14).catch(() => ({ entries: [] })),
+        wellnessApi.getCorrelation().catch(() => null),
+      ]);
+      setMoodHistory(historyRes.entries || []);
+      setCorrelation(correlationRes);
     } catch (e) {
       console.error('Failed to save mood:', e);
     } finally {

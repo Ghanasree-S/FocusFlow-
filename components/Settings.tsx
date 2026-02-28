@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import React, { useState, useEffect } from 'react';
-import { authApi } from '../services/api';
+import { authApi, tasksApi } from '../services/api';
 import { 
   Sun, 
   Moon, 
@@ -196,9 +196,7 @@ const Settings: React.FC<SettingsProps> = ({ isDarkMode, setIsDarkMode, onLogout
     try {
       const [profile, taskData] = await Promise.all([
         authApi.getProfile(),
-        fetch('http://localhost:5000/api/tasks', {
-          headers: { 'Authorization': `Bearer ${sessionStorage.getItem('ChronosAI_token')}` }
-        }).then(r => r.json())
+        tasksApi.getAll()
       ]);
 
       const exportObj = {
@@ -228,13 +226,7 @@ const Settings: React.FC<SettingsProps> = ({ isDarkMode, setIsDarkMode, onLogout
     if (deleteConfirmText !== 'DELETE') return;
     setIsDeleting(true);
     try {
-      await fetch('http://localhost:5000/api/auth/account', {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('ChronosAI_token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      await authApi.deleteAccount();
       // Clear all local data
       localStorage.clear();
       sessionStorage.clear();
@@ -248,14 +240,7 @@ const Settings: React.FC<SettingsProps> = ({ isDarkMode, setIsDarkMode, onLogout
 
   const handleClearHistory = async () => {
     try {
-      await fetch('http://localhost:5000/api/auth/clear-data', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('ChronosAI_token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ retention_days: dataRetentionDays })
-      });
+      await authApi.clearData(dataRetentionDays);
       alert('Activity history older than ' + dataRetentionDays + ' days has been cleared.');
     } catch (error) {
       console.error('Failed to clear history:', error);
