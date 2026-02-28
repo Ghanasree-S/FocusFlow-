@@ -7,7 +7,12 @@ import os
 import sys
 import time
 import requests
-import pygetwindow as gw
+try:
+    import pygetwindow as gw
+    TRACKER_AVAILABLE = True
+except (ImportError, Exception):
+    gw = None
+    TRACKER_AVAILABLE = False
 from datetime import datetime
 
 # Add parent directory to path

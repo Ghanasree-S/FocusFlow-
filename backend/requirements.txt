@@ -35,5 +35,5 @@ gunicorn==21.2.0
 # 2FA Authentication
 pyotp==2.9.0
 
-# Activity Tracker
-pygetwindow==0.0.9
+# Activity Tracker (Windows only - optional on Linux/cloud)
+# pygetwindow==0.0.9

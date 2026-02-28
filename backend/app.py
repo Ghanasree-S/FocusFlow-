@@ -25,9 +25,9 @@ import requests
 try:
     import pygetwindow as gw
     TRACKER_AVAILABLE = True
-except ImportError:
+except (ImportError, Exception):
     TRACKER_AVAILABLE = False
-    print("âš ï¸  pygetwindow not installed. Run: pip install pygetwindow", flush=True)
+    print("⚠️  pygetwindow not available (Linux/cloud). Activity tracker disabled.", flush=True)
 
 from datetime import datetime
 
