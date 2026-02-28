@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
@@ -11,10 +11,14 @@ import {
   BrainCircuit,
   Target,
   FileText,
+  MessageSquare,
+  Heart,
+  Users,
   Settings,
   User,
   LogOut,
-  Zap
+  Timer,
+  Sparkles
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,8 +33,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, onLogout }) => 
     { id: 'TASKS' as View, label: 'Task Manager', icon: CheckSquare },
     { id: 'ANALYTICS' as View, label: 'Analytics', icon: BarChart3 },
     { id: 'ML_INSIGHTS' as View, label: 'ML Insights', icon: BrainCircuit },
+    { id: 'NOVEL_INSIGHTS' as View, label: 'Novel Research', icon: Sparkles },
     { id: 'FOCUS' as View, label: 'Focus Mode', icon: Target },
     { id: 'REPORTS' as View, label: 'Reports', icon: FileText },
+    { id: 'CHATBOT' as View, label: 'AI Coach', icon: MessageSquare },
+    { id: 'WELLNESS' as View, label: 'Wellness', icon: Heart },
+    { id: 'TEAM' as View, label: 'Team', icon: Users },
   ];
 
   const bottomItems = [
@@ -41,11 +49,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, onLogout }) => 
   return (
     <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-colors z-50">
       <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
-          <Zap className="w-6 h-6 fill-current" />
+        <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+          <Timer className="w-6 h-6" />
         </div>
         <span className="text-xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
-          FocusFlow
+          Chronos<span className="text-indigo-500">AI</span>
         </span>
       </div>
 

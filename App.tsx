@@ -12,10 +12,14 @@ import Analytics from './components/Analytics';
 import MLInsights from './components/MLInsights';
 import FocusMode from './components/FocusMode';
 import Reports from './components/Reports';
+import ChatBot from './components/ChatBot';
+import Wellness from './components/Wellness';
+import Team from './components/Team';
 import Settings from './components/Settings';
 import Profile from './components/Profile';
 import Auth from './components/Auth';
 import Onboarding from './components/Onboarding';
+import NovelInsights from './components/NovelInsights';
 import { Sun, Moon } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -106,7 +110,7 @@ const App: React.FC = () => {
       case 'ONBOARDING':
         return <Onboarding onComplete={() => setView('DASHBOARD')} />;
       case 'DASHBOARD':
-        return <Dashboard tasks={tasks} />;
+        return <Dashboard tasks={tasks} setView={setView} />;
       case 'TASKS':
         return <TaskManager tasks={tasks} setTasks={handleTasksUpdate} />;
       case 'ANALYTICS':
@@ -114,16 +118,24 @@ const App: React.FC = () => {
       case 'INSIGHTS':
       case 'ML_INSIGHTS':
         return <MLInsights />;
+      case 'NOVEL_INSIGHTS':
+        return <NovelInsights />;
       case 'FOCUS':
         return <FocusMode />;
       case 'REPORTS':
         return <Reports />;
+      case 'CHATBOT':
+        return <ChatBot />;
+      case 'WELLNESS':
+        return <Wellness />;
+      case 'TEAM':
+        return <Team />;
       case 'SETTINGS':
-        return <Settings isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />;
+        return <Settings isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} onLogout={handleLogout} />;
       case 'PROFILE':
-        return <Profile user={user} />;
+        return <Profile user={user} onUserUpdate={(u: UserProfile) => setUser(u)} />;
       default:
-        return <Dashboard tasks={tasks} />;
+        return <Dashboard tasks={tasks} setView={setView} />;
     }
   };
 

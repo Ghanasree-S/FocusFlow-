@@ -1,5 +1,5 @@
-"""
-FocusFlow Backend Configuration
+﻿"""
+ChronosAI Backend Configuration
 """
 import os
 from dotenv import load_dotenv
@@ -10,12 +10,12 @@ class Config:
     """Application configuration"""
     
     # Flask
-    SECRET_KEY = os.getenv('SECRET_KEY', 'focusflow-secret-key-change-in-production')
+    SECRET_KEY = os.getenv('SECRET_KEY', 'ChronosAI-secret-key-change-in-production')
     DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
     
     # MongoDB
     MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
-    MONGO_DB_NAME = os.getenv('MONGO_DB_NAME', 'focusflow')
+    MONGO_DB_NAME = os.getenv('MONGO_DB_NAME', 'ChronosAI')
     
     # JWT
     JWT_SECRET = os.getenv('JWT_SECRET', 'jwt-secret-key-change-in-production')

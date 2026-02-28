@@ -1,6 +1,6 @@
-"""
+﻿"""
 Generate PACF Plot showing clear spike at lag=1 (p=1 for ARIMA AR order)
-This demonstrates AR(1) pattern for FocusFlow ARIMA model documentation
+This demonstrates AR(1) pattern for ChronosAI ARIMA model documentation
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -58,12 +58,12 @@ bars[1].set_edgecolor('purple')
 bars[1].set_linewidth(2)
 
 # Add confidence interval lines
-ax.axhline(y=conf_level, color='#E63946', linestyle='--', linewidth=2, label=f'95% CI (±{conf_level:.3f})')
+ax.axhline(y=conf_level, color='#E63946', linestyle='--', linewidth=2, label=f'95% CI (Â±{conf_level:.3f})')
 ax.axhline(y=-conf_level, color='#E63946', linestyle='--', linewidth=2)
 ax.axhline(y=0, color='black', linewidth=0.5)
 
 # Add arrow pointing to lag 1
-ax.annotate('Significant spike\nat Lag 1 → p = 1', 
+ax.annotate('Significant spike\nat Lag 1 â†’ p = 1', 
             xy=(1, pacf_values[1]), 
             xytext=(4, 0.85),
             fontsize=10,
@@ -74,10 +74,10 @@ ax.annotate('Significant spike\nat Lag 1 → p = 1',
 # Add interpretation box
 interpretation = (
     "Interpretation:\n"
-    "• Lag 0 = 1.0 (self-correlation)\n"
-    "• Significant spike at Lag 1 → p = 1\n"
-    "• Sharp cutoff after Lag 1 → AR(1)\n"
-    "• AR(1) component for ARIMA"
+    "â€¢ Lag 0 = 1.0 (self-correlation)\n"
+    "â€¢ Significant spike at Lag 1 â†’ p = 1\n"
+    "â€¢ Sharp cutoff after Lag 1 â†’ AR(1)\n"
+    "â€¢ AR(1) component for ARIMA"
 )
 props = dict(boxstyle='round,pad=0.5', facecolor='#F3E5F5', edgecolor='#7B1FA2', alpha=0.95)
 ax.text(0.02, 0.98, interpretation, transform=ax.transAxes, fontsize=9,

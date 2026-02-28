@@ -1,9 +1,9 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
 import React, { useState, useEffect } from 'react';
-import { Task } from '../types';
+import { View, Task } from '../types';
 import { insightsApi } from '../services/api';
 import {
   CheckCircle2,
@@ -11,11 +11,15 @@ import {
   AlertTriangle,
   ArrowUpRight,
   Plus,
-  Target
+  Target,
+  Zap,
+  ShieldAlert,
+  TrendingDown
 } from 'lucide-react';
 
 interface DashboardProps {
   tasks: Task[];
+  setView: (view: View) => void;
 }
 
 interface DashboardData {
@@ -24,16 +28,19 @@ interface DashboardData {
   distractionSpikes: number;
   hourlyData: Array<{ time: string; productive: number; distracted: number }>;
   hasData?: boolean;
+  totalProductiveMinutes?: number;
+  totalMinutes?: number;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
+const Dashboard: React.FC<DashboardProps> = ({ tasks, setView }) => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(() => {
     // Load cached data immediately on mount
-    const cached = localStorage.getItem('focusflow_dashboard_cache');
+    const cached = localStorage.getItem('ChronosAI_dashboard_cache');
     return cached ? JSON.parse(cached) : null;
   });
-  const [isLoading, setIsLoading] = useState(!localStorage.getItem('focusflow_dashboard_cache'));
+  const [isLoading, setIsLoading] = useState(!localStorage.getItem('ChronosAI_dashboard_cache'));
   const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [distractionPatterns, setDistractionPatterns] = useState<any>(null);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -41,7 +48,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
         const data = await insightsApi.getDashboard();
         setDashboardData(data);
         // Cache the data
-        localStorage.setItem('focusflow_dashboard_cache', JSON.stringify(data));
+        localStorage.setItem('ChronosAI_dashboard_cache', JSON.stringify(data));
         setLastUpdated(new Date().toLocaleTimeString());
       } catch (error) {
         console.error('Failed to fetch dashboard:', error);
@@ -50,8 +57,18 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
       }
     };
 
+    const fetchDistractionPatterns = async () => {
+      try {
+        const data = await insightsApi.getDistractionPatterns();
+        setDistractionPatterns(data);
+      } catch (e) {
+        // optional
+      }
+    };
+
     // Fetch immediately
     fetchDashboard();
+    fetchDistractionPatterns();
 
     // Then refresh every 60 seconds
     const interval = setInterval(fetchDashboard, 60000);
@@ -62,13 +79,25 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
   const completedTasks = dashboardData?.taskStats?.completed ?? 0;
   const totalTasks = dashboardData?.taskStats?.total ?? 0;
   const pendingTasks = dashboardData?.taskStats?.pending ?? 0;
+  const highPriorityTasks = dashboardData?.taskStats?.high_priority ?? 0;
   const focusScore = dashboardData?.focusScore ?? 0;
   const distractionSpikes = dashboardData?.distractionSpikes ?? 0;
+  const totalProductiveMin = dashboardData?.totalProductiveMinutes ?? 0;
+  const totalMin = dashboardData?.totalMinutes ?? 0;
 
-  // Use real hourly data or empty array
+  // Use real hourly data or generate sample data so the chart is always visible
   const timeSeriesData = dashboardData?.hourlyData?.length
     ? dashboardData.hourlyData
-    : [];
+    : [
+        { time: '6AM', productive: 5, distracted: 2 },
+        { time: '8AM', productive: 25, distracted: 5 },
+        { time: '10AM', productive: 40, distracted: 8 },
+        { time: '12PM', productive: 30, distracted: 15 },
+        { time: '2PM', productive: 45, distracted: 10 },
+        { time: '4PM', productive: 35, distracted: 12 },
+        { time: '6PM', productive: 20, distracted: 18 },
+        { time: '8PM', productive: 10, distracted: 8 },
+      ];
 
   if (isLoading) {
     return (
@@ -93,26 +122,114 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
         <StatCard
           label="Focus Score"
           value={`${focusScore}%`}
-          subValue="+4% from yesterday"
+          subValue={totalMin > 0 ? `${Math.round(totalProductiveMin)}m productive of ${Math.round(totalMin)}m tracked` : 'No activity data yet'}
           icon={<Target className="text-indigo-500" />}
           color="indigo"
-          trend="up"
+          trend={focusScore > 50 ? 'up' : undefined}
         />
         <StatCard
           label="Pending Deadline"
           value={pendingTasks.toString()}
-          subValue="2 due within 24h"
+          subValue={highPriorityTasks > 0 ? `${highPriorityTasks} high priority` : 'No urgent tasks'}
           icon={<Clock className="text-amber-500" />}
           color="amber"
         />
         <StatCard
           label="Distraction Spikes"
           value={distractionSpikes.toString()}
-          subValue="Lower than average"
+          subValue={distractionSpikes === 0 ? 'No distractions detected' : distractionSpikes <= 2 ? 'Lower than average' : 'Above average'}
           icon={<AlertTriangle className="text-rose-500" />}
           color="rose"
         />
       </div>
+
+      {/* Distraction Alerts Panel */}
+      {(distractionSpikes > 0 || distractionPatterns) && (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-rose-200 dark:border-rose-800/50 p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl">
+              <ShieldAlert className="w-5 h-5 text-rose-500" />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-slate-900 dark:text-white text-sm">Distraction Alerts</h3>
+              <p className="text-[10px] text-slate-400">Real-time distraction analysis</p>
+            </div>
+            {distractionSpikes > 3 && (
+              <span className="ml-auto flex items-center gap-1 text-[10px] font-bold bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 px-2 py-1 rounded-full">
+                <Zap className="w-3 h-3" /> High Activity
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Distraction Level */}
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
+              <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Distraction Level</p>
+              <div className="flex items-end gap-2">
+                <span className={`text-xl font-bold ${
+                  distractionSpikes > 5 ? 'text-rose-500' : distractionSpikes > 2 ? 'text-amber-500' : 'text-emerald-500'
+                }`}>
+                  {distractionSpikes > 5 ? 'High' : distractionSpikes > 2 ? 'Moderate' : 'Low'}
+                </span>
+                {distractionSpikes > 2 && <TrendingDown className="w-4 h-4 text-rose-400 mb-1" />}
+              </div>
+              <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mt-2 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    distractionSpikes > 5 ? 'bg-rose-500' : distractionSpikes > 2 ? 'bg-amber-500' : 'bg-emerald-500'
+                  }`}
+                  style={{ width: `${Math.min(100, distractionSpikes * 10)}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Peak Distraction Hour */}
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
+              <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Peak Distraction Hour</p>
+              {distractionPatterns?.peak_hours?.length > 0 ? (
+                <>
+                  <span className="text-xl font-bold text-slate-800 dark:text-white">
+                    {distractionPatterns.peak_hours[0].time || distractionPatterns.peak_hours[0].hour || '--'}
+                  </span>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    {distractionPatterns.peak_hours[0].distracted || 0} min distracted
+                  </p>
+                </>
+              ) : (
+                <span className="text-sm text-slate-400">No data yet</span>
+              )}
+            </div>
+
+            {/* Top Distractor */}
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
+              <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Top Distractor</p>
+              {distractionPatterns?.top_distractions?.length > 0 ? (
+                <>
+                  <span className="text-xl font-bold text-slate-800 dark:text-white truncate block">
+                    {distractionPatterns.top_distractions[0].name || distractionPatterns.top_distractions[0].app || 'Unknown'}
+                  </span>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    {distractionPatterns.top_distractions[0].minutes || distractionPatterns.top_distractions[0].duration || 0} min total
+                  </p>
+                </>
+              ) : (
+                <span className="text-sm text-slate-400">No data yet</span>
+              )}
+            </div>
+          </div>
+
+          {/* Quick tips based on patterns */}
+          {distractionSpikes > 2 && (
+            <div className="mt-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-3 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                {distractionSpikes > 5
+                  ? 'High distraction activity today. Consider using Focus Mode with app blocking enabled to improve concentration.'
+                  : 'Moderate distractions detected. Try scheduling deep work during your least-distracted hours.'}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Activity Chart */}
@@ -234,7 +351,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
               </div>
             ))}
           </div>
-          <button className="mt-4 w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all">
+          <button onClick={() => setView('FOCUS')} className="mt-4 w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all">
             Start Focus Session
           </button>
         </div>
@@ -252,7 +369,7 @@ const StatCard = ({ label, value, subValue, icon, color, trend }: any) => (
       </div>
       {trend === 'up' && (
         <span className="flex items-center text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-lg">
-          <ArrowUpRight className="w-3 h-3 mr-0.5" /> 12%
+          <ArrowUpRight className="w-3 h-3 mr-0.5" /> Good
         </span>
       )}
     </div>

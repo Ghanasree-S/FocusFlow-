@@ -1,4 +1,4 @@
-"""
+﻿"""
 Train all ML models (LSTM, ARIMA, Prophet) with the dataset
 Saves in the correct format expected by the forecasters
 """
@@ -14,18 +14,18 @@ warnings.filterwarnings('ignore')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 print("=" * 60)
-print("🚀 FOCUSFLOW ML MODEL TRAINING (v2)")
+print("ðŸš€ ChronosAI ML MODEL TRAINING (v2)")
 print("=" * 60)
 
 # Load the dataset
 dataset_path = 'dataset/screen_time_app_usage_dataset.csv'
-print(f"\n📂 Loading dataset: {dataset_path}")
+print(f"\nðŸ“‚ Loading dataset: {dataset_path}")
 
 df = pd.read_csv(dataset_path)
 print(f"   Loaded {len(df)} rows")
 
 # Prepare time series data
-print("\n📈 Preparing time series data...")
+print("\nðŸ“ˆ Preparing time series data...")
 if 'date' in df.columns:
     df['date'] = pd.to_datetime(df['date'])
     df['date_only'] = df['date'].dt.date
@@ -56,7 +56,7 @@ os.makedirs(model_dir, exist_ok=True)
 
 # ============ TRAIN LSTM ============
 print("\n" + "=" * 60)
-print("🧠 TRAINING LSTM MODEL")
+print("ðŸ§  TRAINING LSTM MODEL")
 print("=" * 60)
 
 try:
@@ -99,14 +99,14 @@ try:
     with open(f'{model_dir}/lstm_scaler.pkl', 'wb') as f:
         pickle.dump(scaler, f)
     
-    print(f"   ✅ LSTM trained! Final loss: {history.history['loss'][-1]:.4f}")
+    print(f"   âœ… LSTM trained! Final loss: {history.history['loss'][-1]:.4f}")
     
 except Exception as e:
-    print(f"   ❌ LSTM training failed: {e}")
+    print(f"   âŒ LSTM training failed: {e}")
 
 # ============ TRAIN ARIMA ============
 print("\n" + "=" * 60)
-print("📊 TRAINING ARIMA MODEL")
+print("ðŸ“Š TRAINING ARIMA MODEL")
 print("=" * 60)
 
 try:
@@ -125,14 +125,14 @@ try:
             'training_data': train_data['y']
         }, f)
     
-    print(f"   ✅ ARIMA trained! AIC: {arima_result.aic:.2f}")
+    print(f"   âœ… ARIMA trained! AIC: {arima_result.aic:.2f}")
     
 except Exception as e:
-    print(f"   ❌ ARIMA training failed: {e}")
+    print(f"   âŒ ARIMA training failed: {e}")
 
 # ============ TRAIN PROPHET ============
 print("\n" + "=" * 60)
-print("🔮 TRAINING PROPHET MODEL")
+print("ðŸ”® TRAINING PROPHET MODEL")
 print("=" * 60)
 
 try:
@@ -153,12 +153,12 @@ try:
     with open(f'{model_dir}/prophet_model.pkl', 'wb') as f:
         pickle.dump(prophet_model, f)
     
-    print(f"   ✅ Prophet trained!")
+    print(f"   âœ… Prophet trained!")
     
 except Exception as e:
-    print(f"   ❌ Prophet training failed: {e}")
+    print(f"   âŒ Prophet training failed: {e}")
 
 print("\n" + "=" * 60)
-print("✅ MODEL TRAINING COMPLETE!")
+print("âœ… MODEL TRAINING COMPLETE!")
 print("=" * 60)
 print("\nRestart the backend to use the trained models.")

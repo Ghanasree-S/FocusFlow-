@@ -1,36 +1,36 @@
-# 🎓 Complete Analysis: How ARIMA(1,1,1) Was Selected
+﻿# ðŸŽ“ Complete Analysis: How ARIMA(1,1,1) Was Selected
 ## For Your Professor/Assignment Submission
 
 ---
 
-## 📦 What's Inside This Folder
+## ðŸ“¦ What's Inside This Folder
 
 Your professor will find a **complete, step-by-step analysis** following the Unit II methodology for ARIMA model selection.
 
-### 📁 Contents:
+### ðŸ“ Contents:
 ```
 selection_of_model/
-├── 01_collect_and_plot_data.py          (Step 1)
-├── 01_time_series_plot.png              (Output)
-├── 02_stationarity_test.py              (Step 2)
-├── 02_stationarity_test.png             (Output)
-├── 03_acf_pacf_analysis.py              (Step 3)
-├── 03_acf_pacf_analysis.png             (Output)
-├── 04_model_comparison.py               (Step 4)
-├── 04_model_comparison_aic_bic.png      (Output)
-├── 05_residual_diagnostics.py           (Step 5)
-├── 05_residual_diagnostics.png          (Output)
-├── 06_final_summary.py                  (Step 6)
-├── 06_final_summary_report.png          (Output)
-├── processed_data.csv                   (Data)
-├── model_comparison_results.csv         (Results)
-├── README.md                            (Full Documentation)
-└── THIS_FILE                            (Quick Reference)
+â”œâ”€â”€ 01_collect_and_plot_data.py          (Step 1)
+â”œâ”€â”€ 01_time_series_plot.png              (Output)
+â”œâ”€â”€ 02_stationarity_test.py              (Step 2)
+â”œâ”€â”€ 02_stationarity_test.png             (Output)
+â”œâ”€â”€ 03_acf_pacf_analysis.py              (Step 3)
+â”œâ”€â”€ 03_acf_pacf_analysis.png             (Output)
+â”œâ”€â”€ 04_model_comparison.py               (Step 4)
+â”œâ”€â”€ 04_model_comparison_aic_bic.png      (Output)
+â”œâ”€â”€ 05_residual_diagnostics.py           (Step 5)
+â”œâ”€â”€ 05_residual_diagnostics.png          (Output)
+â”œâ”€â”€ 06_final_summary.py                  (Step 6)
+â”œâ”€â”€ 06_final_summary_report.png          (Output)
+â”œâ”€â”€ processed_data.csv                   (Data)
+â”œâ”€â”€ model_comparison_results.csv         (Results)
+â”œâ”€â”€ README.md                            (Full Documentation)
+â””â”€â”€ THIS_FILE                            (Quick Reference)
 ```
 
 ---
 
-## 🎯 The Answer: ARIMA(1,1,1)
+## ðŸŽ¯ The Answer: ARIMA(1,1,1)
 
 ### Why This Model?
 
@@ -38,20 +38,20 @@ selection_of_model/
 
 ```
 3000 raw activity records
-        ↓ (Aggregated by date)
+        â†“ (Aggregated by date)
 91 unique daily records
-        ↓ (80/20 train/test split)
+        â†“ (80/20 train/test split)
 73 days training data
-        ↓ (Tested 3 models)
-ARIMA(1,1,1) SELECTED ✅
-        ↓
+        â†“ (Tested 3 models)
+ARIMA(1,1,1) SELECTED âœ…
+        â†“
 AIC = 885.52 (Best)
 BIC = 892.31 (Good)
 ```
 
 ---
 
-## 📊 6-Step Methodology (Unit II Process)
+## ðŸ“Š 6-Step Methodology (Unit II Process)
 
 ### **Step 1: Data Collection & Plotting**
 - Loaded 3000 raw activity samples
@@ -85,9 +85,9 @@ Tested three candidate models:
 
 | Model | AIC | BIC | Selected |
 |-------|-----|-----|----------|
-| ARIMA(1,1,0) | 907.18 | 911.71 | ❌ |
-| ARIMA(0,1,1) | 885.34 | 889.87 | ⚠️ |
-| **ARIMA(1,1,1)** | **885.52** | **892.31** | **✅ YES** |
+| ARIMA(1,1,0) | 907.18 | 911.71 | âŒ |
+| ARIMA(0,1,1) | 885.34 | 889.87 | âš ï¸ |
+| **ARIMA(1,1,1)** | **885.52** | **892.31** | **âœ… YES** |
 
 **Reason:** ARIMA(1,1,1) has lowest AIC and captures both AR & MA effects
 
@@ -98,10 +98,10 @@ Tested three candidate models:
 ### **Step 5: Residual Diagnostics**
 Verified ARIMA(1,1,1) is valid:
 
-✅ Residuals centered at 0 (no bias)
-✅ Residuals are white noise (no patterns)
-✅ Residuals approximately normal
-✅ No autocorrelation
+âœ… Residuals centered at 0 (no bias)
+âœ… Residuals are white noise (no patterns)
+âœ… Residuals approximately normal
+âœ… No autocorrelation
 
 **Output:** `05_residual_diagnostics.png`
 
@@ -114,7 +114,7 @@ Complete visual summary of selection process
 
 ---
 
-## 🔍 Key Findings
+## ðŸ” Key Findings
 
 ### Dataset Transformation:
 ```
@@ -126,13 +126,13 @@ Test Set:        19 days (20%)
 
 ### Model Equation (ARIMA(1,1,1)):
 ```
-Δy_t = φ₁ * Δy_{t-1} + θ₁ * ε_{t-1} + ε_t
+Î”y_t = Ï†â‚ * Î”y_{t-1} + Î¸â‚ * Îµ_{t-1} + Îµ_t
 
 Where:
-- Δy_t = Change in productive minutes today
-- φ₁ = AR coefficient (~0.15-0.25)
-- θ₁ = MA coefficient
-- ε_t = Error term (white noise)
+- Î”y_t = Change in productive minutes today
+- Ï†â‚ = AR coefficient (~0.15-0.25)
+- Î¸â‚ = MA coefficient
+- Îµ_t = Error term (white noise)
 ```
 
 ### Why Not Other Models?
@@ -147,7 +147,7 @@ Where:
 - Misses AR component effects
 - Doesn't capture past values well
 
-**ARIMA(1,1,1) - AR + MA Combined:** ✅
+**ARIMA(1,1,1) - AR + MA Combined:** âœ…
 - AIC = 885.52 (best)
 - Captures both trends and shocks
 - Balances complexity and fit
@@ -155,7 +155,7 @@ Where:
 
 ---
 
-## 📈 How to Present This to Your Professor
+## ðŸ“ˆ How to Present This to Your Professor
 
 ### Option 1: Full Presentation
 1. **Show the flowchart** (Unit II methodology)
@@ -165,11 +165,11 @@ Where:
 5. **Conclude:** ARIMA(1,1,1) is best
 
 ### Option 2: Quick Summary
-1. **Dataset:** 3000 samples → 92 days
+1. **Dataset:** 3000 samples â†’ 92 days
 2. **Stationarity:** d=1 (differencing needed)
 3. **ACF/PACF:** Identified p=1, q=1
 4. **Comparison:** ARIMA(1,1,1) best (AIC: 885.52)
-5. **Validation:** All checks pass ✅
+5. **Validation:** All checks pass âœ…
 6. **Conclusion:** Ready for production
 
 ### Option 3: Data-Heavy
@@ -180,7 +180,7 @@ Where:
 
 ---
 
-## 💡 Key Numbers Your Professor Will Ask About
+## ðŸ’¡ Key Numbers Your Professor Will Ask About
 
 **Q: Why 73 training days?**
 A: 80% of 91 daily aggregated records = 73 days
@@ -205,7 +205,7 @@ A: Residual diagnostics: white noise, normal distribution, no patterns
 
 ---
 
-## 🚀 Using This for Your Project
+## ðŸš€ Using This for Your Project
 
 ### For Assignment Submission:
 1. Include this folder in your submission
@@ -225,14 +225,14 @@ A: Residual diagnostics: white noise, normal distribution, no patterns
 
 ---
 
-## 📚 Files to Show Your Professor
+## ðŸ“š Files to Show Your Professor
 
 **Must Show:**
-1. ✅ `01_time_series_plot.png` - Data visualization
-2. ✅ `02_stationarity_test.png` - ADF/KPSS results  
-3. ✅ `03_acf_pacf_analysis.png` - Model identification
-4. ✅ `04_model_comparison_aic_bic.png` - Selection criterion
-5. ✅ `05_residual_diagnostics.png` - Validation
+1. âœ… `01_time_series_plot.png` - Data visualization
+2. âœ… `02_stationarity_test.png` - ADF/KPSS results  
+3. âœ… `03_acf_pacf_analysis.png` - Model identification
+4. âœ… `04_model_comparison_aic_bic.png` - Selection criterion
+5. âœ… `05_residual_diagnostics.png` - Validation
 
 **Optional References:**
 - `README.md` - Full documentation
@@ -241,13 +241,13 @@ A: Residual diagnostics: white noise, normal distribution, no patterns
 
 ---
 
-## ✅ Quality Assurance Checklist
+## âœ… Quality Assurance Checklist
 
 Before showing to your professor:
 
 - [x] All 6 steps completed
 - [x] All plots generated
-- [x] Data properly aggregated (3000 → 91 → 73)
+- [x] Data properly aggregated (3000 â†’ 91 â†’ 73)
 - [x] ARIMA(1,1,1) justified by AIC
 - [x] Residual diagnostics all pass
 - [x] Model is statistically valid
@@ -256,25 +256,25 @@ Before showing to your professor:
 
 ---
 
-## 🎯 Quick Talking Points
+## ðŸŽ¯ Quick Talking Points
 
 When your professor asks:
 
 **"Why ARIMA(1,1,1)?"**
-→ "It has the best AIC (885.52) among all candidates and passes all validation tests."
+â†’ "It has the best AIC (885.52) among all candidates and passes all validation tests."
 
 **"How did you choose p, d, q?"**
-→ "Stationarity test gave d=1, ACF/PACF analysis suggested p=1 and q=1."
+â†’ "Stationarity test gave d=1, ACF/PACF analysis suggested p=1 and q=1."
 
 **"Is your model any good?"**
-→ "Yes, residuals are white noise with no autocorrelation, confirming valid fit."
+â†’ "Yes, residuals are white noise with no autocorrelation, confirming valid fit."
 
 **"What about your 3000 samples?"**
-→ "They aggregate to 91 daily records, with 73 days used for training."
+â†’ "They aggregate to 91 daily records, with 73 days used for training."
 
 ---
 
-## 📞 Quick Reference Card
+## ðŸ“ž Quick Reference Card
 
 ```
 DATASET:
@@ -289,22 +289,22 @@ MODEL SELECTED: ARIMA(1,1,1)
   q = 1 (Moving Average)
 
 PERFORMANCE:
-  AIC: 885.52 ⭐ BEST
-  BIC: 892.31 ✅ GOOD
+  AIC: 885.52 â­ BEST
+  BIC: 892.31 âœ… GOOD
 
-VALIDATION: ✅ ALL PASS
-  ✓ Stationarity: Verified
-  ✓ ACF/PACF: Analyzed
-  ✓ Residuals: White Noise
-  ✓ Distribution: Normal
-  ✓ Autocorrelation: None
+VALIDATION: âœ… ALL PASS
+  âœ“ Stationarity: Verified
+  âœ“ ACF/PACF: Analyzed
+  âœ“ Residuals: White Noise
+  âœ“ Distribution: Normal
+  âœ“ Autocorrelation: None
 
-STATUS: 🚀 PRODUCTION READY
+STATUS: ðŸš€ PRODUCTION READY
 ```
 
 ---
 
 **Created:** January 22, 2026  
-**For:** FocusFlow Project - Unit II Model Selection  
+**For:** ChronosAI Project - Unit II Model Selection  
 **Dataset:** 3000 productivity activity samples  
-**Result:** ARIMA(1,1,1) selected and validated ✅
+**Result:** ARIMA(1,1,1) selected and validated âœ…

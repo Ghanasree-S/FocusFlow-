@@ -1,5 +1,5 @@
-"""
-FocusFlow Desktop Activity Tracker
+﻿"""
+ChronosAI Desktop Activity Tracker
 Monitors active window every 10 seconds and logs to database via API
 Uses pygetwindow to get active window information
 """
@@ -42,19 +42,19 @@ DISTRACTING_APPS = [
 def print_banner():
     """Print startup banner"""
     print("\n" + "=" * 60)
-    print("   🎯 FOCUSFLOW ACTIVITY TRACKER")
+    print("   ðŸŽ¯ ChronosAI ACTIVITY TRACKER")
     print("=" * 60)
 
 def print_status(message, status_type="info"):
     """Print formatted status message"""
     timestamp = datetime.now().strftime('%H:%M:%S')
     icons = {
-        "info": "ℹ️ ",
-        "success": "✅",
-        "error": "❌",
-        "track": "📊",
-        "save": "💾",
-        "app": "🖥️ "
+        "info": "â„¹ï¸ ",
+        "success": "âœ…",
+        "error": "âŒ",
+        "track": "ðŸ“Š",
+        "save": "ðŸ’¾",
+        "app": "ðŸ–¥ï¸ "
     }
     icon = icons.get(status_type, "  ")
     print(f"[{timestamp}] {icon} {message}")
@@ -76,10 +76,10 @@ def categorize_app(app_name: str) -> str:
 def get_category_emoji(category: str) -> str:
     """Get emoji for category"""
     return {
-        'productive': '🟢',
-        'distracting': '🔴',
-        'neutral': '🟡'
-    }.get(category, '⚪')
+        'productive': 'ðŸŸ¢',
+        'distracting': 'ðŸ”´',
+        'neutral': 'ðŸŸ¡'
+    }.get(category, 'âšª')
 
 def extract_website_from_title(title: str) -> str:
     """Extract website/page name from browser window title"""
@@ -251,7 +251,7 @@ def run_tracker(email: str, password: str, interval_seconds: int = 10):
     
     print()
     print("-" * 60)
-    print_status("🚀 TRACKER STARTED!", "success")
+    print_status("ðŸš€ TRACKER STARTED!", "success")
     print_status(f"Monitoring every {interval_seconds} seconds", "info")
     print_status("Press Ctrl+C to stop", "info")
     print("-" * 60)
@@ -304,14 +304,14 @@ def run_tracker(email: str, password: str, interval_seconds: int = 10):
                     records_saved += 1
         
         print()
-        print_status("🛑 TRACKER STOPPED", "info")
+        print_status("ðŸ›‘ TRACKER STOPPED", "info")
         print_status(f"Total records saved to database: {records_saved}", "success")
         print("-" * 60)
         print()
 
 if __name__ == '__main__':
     # Default credentials
-    EMAIL = 'demo@focusflow.ai'
+    EMAIL = 'demo@ChronosAI.ai'
     PASSWORD = 'demo123'
     INTERVAL = 10  # seconds
     

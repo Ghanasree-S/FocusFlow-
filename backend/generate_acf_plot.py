@@ -1,6 +1,6 @@
-"""
+﻿"""
 Generate ACF Plot showing clear spike at lag=1 (q=1 for ARIMA MA order)
-This demonstrates MA(1) pattern for FocusFlow ARIMA model documentation
+This demonstrates MA(1) pattern for ChronosAI ARIMA model documentation
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -60,12 +60,12 @@ bars[1].set_edgecolor('darkgreen')
 bars[1].set_linewidth(2)
 
 # Add confidence interval lines
-ax.axhline(y=conf_level, color='#E63946', linestyle='--', linewidth=2, label=f'95% CI (±{conf_level:.3f})')
+ax.axhline(y=conf_level, color='#E63946', linestyle='--', linewidth=2, label=f'95% CI (Â±{conf_level:.3f})')
 ax.axhline(y=-conf_level, color='#E63946', linestyle='--', linewidth=2)
 ax.axhline(y=0, color='black', linewidth=0.5)
 
 # Add arrow pointing to lag 1
-ax.annotate('Significant spike\nat Lag 1 → q = 1', 
+ax.annotate('Significant spike\nat Lag 1 â†’ q = 1', 
             xy=(1, acf_values[1]), 
             xytext=(4, 0.8),
             fontsize=10,
@@ -76,10 +76,10 @@ ax.annotate('Significant spike\nat Lag 1 → q = 1',
 # Add interpretation box
 interpretation = (
     "Interpretation:\n"
-    "• Lag 0 = 1.0 (self-correlation)\n"
-    "• Significant spike at Lag 1 → q = 1\n"
-    "• Quick decay → Stationary series\n"
-    "• MA(1) component for ARIMA"
+    "â€¢ Lag 0 = 1.0 (self-correlation)\n"
+    "â€¢ Significant spike at Lag 1 â†’ q = 1\n"
+    "â€¢ Quick decay â†’ Stationary series\n"
+    "â€¢ MA(1) component for ARIMA"
 )
 props = dict(boxstyle='round,pad=0.5', facecolor='#E8F4F8', edgecolor='#1565C0', alpha=0.95)
 ax.text(0.02, 0.98, interpretation, transform=ax.transAxes, fontsize=9,

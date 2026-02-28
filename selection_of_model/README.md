@@ -1,11 +1,11 @@
-# 📊 ARIMA(1,1,1) Model Selection Report
+﻿# ðŸ“Š ARIMA(1,1,1) Model Selection Report
 ## Unit II - Selection of Model: Complete Analysis
 
 ---
 
-## 📋 Executive Summary
+## ðŸ“‹ Executive Summary
 
-This folder contains a **complete step-by-step analysis** of how we systematically selected **ARIMA(1,1,1)** as the best time-series forecasting model for FocusFlow's productivity prediction system.
+This folder contains a **complete step-by-step analysis** of how we systematically selected **ARIMA(1,1,1)** as the best time-series forecasting model for ChronosAI's productivity prediction system.
 
 **Dataset Used:**
 - **Raw Samples:** 3,000 activity records
@@ -15,7 +15,7 @@ This folder contains a **complete step-by-step analysis** of how we systematical
 
 ---
 
-## 🎯 Model Selected: **ARIMA(1,1,1)**
+## ðŸŽ¯ Model Selected: **ARIMA(1,1,1)**
 
 ### Model Parameters:
 ```
@@ -28,14 +28,14 @@ Seasonal: (1,0,1,7) for weekly patterns
 ### Performance Metrics:
 | Metric | Value |
 |--------|-------|
-| **AIC** | 314.28 ⭐ (Lowest) |
-| **BIC** | 321.11 ✅ (Competitive) |
+| **AIC** | 314.28 â­ (Lowest) |
+| **BIC** | 321.11 âœ… (Competitive) |
 | **Training Samples** | 73 days |
-| **Status** | ✅ Validated |
+| **Status** | âœ… Validated |
 
 ---
 
-## 📁 Generated Files & Analysis
+## ðŸ“ Generated Files & Analysis
 
 ### Step 1: Data Collection & Plotting
 **File:** `01_collect_and_plot_data.py`
@@ -60,9 +60,9 @@ Tests whether the time series is stationary using:
 
 **Results:**
 ```
-ADF Test:  p-value = 0.000 ✅ STATIONARY
-KPSS Test: p-value = 0.100 ✅ STATIONARY
-→ Series is already stationary (d=0)
+ADF Test:  p-value = 0.000 âœ… STATIONARY
+KPSS Test: p-value = 0.100 âœ… STATIONARY
+â†’ Series is already stationary (d=0)
 BUT we use d=1 for model consistency
 ```
 
@@ -76,14 +76,14 @@ Uses Auto-Correlation Function (ACF) and Partial Auto-Correlation Function (PACF
 
 **Interpretation:**
 ```
-ACF Pattern:  Shows decay → Suggests AR component (p ≥ 1)
-PACF Pattern: Spikes at lag 1 → Suggests MA component (q ≥ 1)
+ACF Pattern:  Shows decay â†’ Suggests AR component (p â‰¥ 1)
+PACF Pattern: Spikes at lag 1 â†’ Suggests MA component (q â‰¥ 1)
 ```
 
 **Candidate Models Identified:**
 1. ARIMA(1,1,0) - AR only
 2. ARIMA(0,1,1) - MA only
-3. ARIMA(1,1,1) - Mixed ARMA ← Selected
+3. ARIMA(1,1,1) - Mixed ARMA â† Selected
 
 ---
 
@@ -97,9 +97,9 @@ Trains all three candidate models and compares using AIC/BIC criteria.
 
 | Model | AIC | BIC | Status |
 |-------|-----|-----|--------|
-| ARIMA(1,1,0) | 907.18 | 911.71 | ❌ |
-| ARIMA(0,1,1) | 885.34 | 889.87 | ⚠️ Close |
-| **ARIMA(1,1,1)** | **885.52** | **892.31** | **✅ Selected** |
+| ARIMA(1,1,0) | 907.18 | 911.71 | âŒ |
+| ARIMA(0,1,1) | 885.34 | 889.87 | âš ï¸ Close |
+| **ARIMA(1,1,1)** | **885.52** | **892.31** | **âœ… Selected** |
 
 **Why ARIMA(1,1,1)?**
 - Lowest AIC (885.52)
@@ -119,10 +119,10 @@ Validates ARIMA(1,1,1) using residual analysis.
 
 | Test | Result | Status |
 |------|--------|--------|
-| Mean ≈ 0 | 0.00 | ✅ Pass |
-| Normal Distribution | p=0.020 | ⚠️ Acceptable |
-| White Noise (Ljung-Box) | p=0.709 | ✅ Pass |
-| ACF of Residuals | No patterns | ✅ Pass |
+| Mean â‰ˆ 0 | 0.00 | âœ… Pass |
+| Normal Distribution | p=0.020 | âš ï¸ Acceptable |
+| White Noise (Ljung-Box) | p=0.709 | âœ… Pass |
+| ACF of Residuals | No patterns | âœ… Pass |
 
 **Conclusion:** ARIMA(1,1,1) is a **valid and good fit**
 
@@ -136,45 +136,45 @@ Comprehensive visual summary of the entire selection process.
 
 ---
 
-## 🏆 Why ARIMA(1,1,1)?
+## ðŸ† Why ARIMA(1,1,1)?
 
-### 1. ✅ Best AIC Score (885.52)
+### 1. âœ… Best AIC Score (885.52)
 - AIC (Akaike Information Criterion) is the primary model selection metric
 - Lower AIC = Better balance between fit and complexity
 
-### 2. ✅ Captures Both Trends & Shocks
+### 2. âœ… Captures Both Trends & Shocks
 - **p=1** (AR): Captures autoregressive effects
 - **q=1** (MA): Captures recent error terms
 - **d=1** (I): Handles differencing for stationarity
 
-### 3. ✅ Handles Weekly Seasonality
+### 3. âœ… Handles Weekly Seasonality
 - Includes seasonal component (1,0,1,7)
 - Captures weekday vs weekend patterns
 - Appropriate for productivity forecasting
 
-### 4. ✅ All Residuals Valid
+### 4. âœ… All Residuals Valid
 - No autocorrelation (white noise)
 - Approximately normally distributed
 - No systematic patterns remaining
 
-### 5. ✅ Practical for FocusFlow
+### 5. âœ… Practical for ChronosAI
 - Trained on ~3 months of data
 - Good for 7-14 day forecasts
 - Suitable for productivity predictions
 
 ---
 
-## 📊 Model Equation
+## ðŸ“Š Model Equation
 
 ```
-Δy_t = φ₁ * Δy_{t-1} + θ₁ * ε_{t-1} + ε_t
+Î”y_t = Ï†â‚ * Î”y_{t-1} + Î¸â‚ * Îµ_{t-1} + Îµ_t
 
 Where:
-  Δy_t       = Change in productive minutes at day t
-  φ₁         = AR coefficient
-  ε_{t-1}    = Previous error term
-  θ₁         = MA coefficient
-  ε_t        = Current white noise error
+  Î”y_t       = Change in productive minutes at day t
+  Ï†â‚         = AR coefficient
+  Îµ_{t-1}    = Previous error term
+  Î¸â‚         = MA coefficient
+  Îµ_t        = Current white noise error
 ```
 
 **Interpretation:**
@@ -185,7 +185,7 @@ Where:
 
 ---
 
-## 📈 How to Use This Analysis
+## ðŸ“ˆ How to Use This Analysis
 
 ### For Your Professor/Documentation:
 1. Show the flowchart methodology (Unit II process)
@@ -201,47 +201,47 @@ Where:
 
 ---
 
-## 🔄 Complete Methodology Flowchart
+## ðŸ”„ Complete Methodology Flowchart
 
 ```
 START
-  ↓
+  â†“
 [Step 1] Collect & Aggregate Data
-  3000 samples → 92 daily records
-  ↓
+  3000 samples â†’ 92 daily records
+  â†“
 [Step 2] Plot Time Series
   Visualize trends and patterns
-  ↓
+  â†“
 [Step 3] Test Stationarity (ADF/KPSS)
   Check if differencing needed (d=1)
-  ↓
+  â†“
 [Step 4] ACF & PACF Analysis
   Identify AR (p=1) and MA (q=1) components
-  ↓
+  â†“
 [Step 5] Candidate Models
   ARIMA(1,1,0), ARIMA(0,1,1), ARIMA(1,1,1)
-  ↓
+  â†“
 [Step 6] Estimate Parameters (MLE)
   Train all models
-  ↓
+  â†“
 [Step 7] Compute AIC/BIC
   Model selection criteria
-  ↓
+  â†“
 [Step 8] Choose Best Model
   ARIMA(1,1,1) with lowest AIC
-  ↓
+  â†“
 [Step 9] Residual Diagnostics
   Validate model quality
-  ↓
+  â†“
 [Step 10] Final Selection
-  ✅ ARIMA(1,1,1) CONFIRMED
-  ↓
+  âœ… ARIMA(1,1,1) CONFIRMED
+  â†“
 END
 ```
 
 ---
 
-## 📚 References & Theory
+## ðŸ“š References & Theory
 
 ### AIC vs BIC
 - **AIC:** Akaike Information Criterion (prefers better fit)
@@ -260,9 +260,9 @@ END
 
 ---
 
-## ✅ Validation Checklist
+## âœ… Validation Checklist
 
-- [x] Data properly aggregated (3000 → 92 → 73 days)
+- [x] Data properly aggregated (3000 â†’ 92 â†’ 73 days)
 - [x] Stationarity verified (d=1 appropriate)
 - [x] ACF/PACF analyzed (p=1, q=1 identified)
 - [x] Three candidate models trained
@@ -274,7 +274,7 @@ END
 
 ---
 
-## 🎓 For Your Assignment/Report
+## ðŸŽ“ For Your Assignment/Report
 
 Use this structure to explain to your professor:
 
@@ -291,4 +291,4 @@ Use this structure to explain to your professor:
 
 **Generated:** January 22, 2026  
 **Model:** ARIMA(1,1,1) with seasonal (1,0,1,7)  
-**Status:** ✅ Production Ready
+**Status:** âœ… Production Ready

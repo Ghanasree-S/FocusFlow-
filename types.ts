@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
-export type View = 'LOGIN' | 'SIGNUP' | 'ONBOARDING' | 'DASHBOARD' | 'TASKS' | 'ANALYTICS' | 'INSIGHTS' | 'ML_INSIGHTS' | 'FOCUS' | 'REPORTS' | 'SETTINGS' | 'PROFILE';
+export type View = 'LOGIN' | 'SIGNUP' | 'ONBOARDING' | 'DASHBOARD' | 'TASKS' | 'ANALYTICS' | 'INSIGHTS' | 'ML_INSIGHTS' | 'NOVEL_INSIGHTS' | 'FOCUS' | 'REPORTS' | 'CHATBOT' | 'WELLNESS' | 'TEAM' | 'SETTINGS' | 'PROFILE';
 
 export type ProductivityLevel = 'Low' | 'Medium' | 'High';
 export type TaskPriority = 'Low' | 'Medium' | 'High';

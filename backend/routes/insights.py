@@ -1,4 +1,4 @@
-"""
+﻿"""
 Insights and ML Prediction Routes
 """
 from flask import Blueprint, request, jsonify
@@ -22,7 +22,7 @@ def _load_ml_modules():
             ProductivityClassifier = PC
             TimeSeriesForecaster = TSF
         except Exception as e:
-            print(f"⚠️ ML modules could not be loaded: {e}")
+            print(f"âš ï¸ ML modules could not be loaded: {e}")
             return False
     return True
 
@@ -657,6 +657,148 @@ def compare_ml_models():
         return jsonify({'error': str(e)}), 500
 
 
+@insights_bp.route('/ml/evaluation-metrics', methods=['GET'])
+@token_required
+def get_evaluation_metrics():
+    """Get evaluation metrics (MAE, RMSE, MAPE, RÂ²) for all ML models"""
+    db = get_db()
+    user_id = request.current_user['id']
+    
+    try:
+        activity_model = ActivityModel(db)
+        weekly_trends = activity_model.get_weekly_trends(user_id)
+        
+        if not weekly_trends or len(weekly_trends) < 14:
+            return jsonify({
+                'error': 'Need at least 14 days of data for evaluation',
+                'current_days': len(weekly_trends) if weekly_trends else 0
+            }), 400
+        
+        import math
+        
+        # Split data: use first 70% for training, last 30% for evaluation
+        split_idx = int(len(weekly_trends) * 0.7)
+        train_data = weekly_trends[:split_idx]
+        test_data = weekly_trends[split_idx:]
+        actual_values = [d.get('productive_minutes', 60) for d in test_data]
+        test_periods = len(test_data)
+        
+        def calc_metrics(predicted, actual):
+            """Calculate MAE, RMSE, MAPE, RÂ²"""
+            n = min(len(predicted), len(actual))
+            if n == 0:
+                return {'mae': 0, 'rmse': 0, 'mape': 0, 'r2': 0, 'accuracy': 0}
+            
+            predicted = predicted[:n]
+            actual = actual[:n]
+            
+            # MAE
+            mae = sum(abs(p - a) for p, a in zip(predicted, actual)) / n
+            
+            # RMSE
+            mse = sum((p - a) ** 2 for p, a in zip(predicted, actual)) / n
+            rmse = math.sqrt(mse)
+            
+            # MAPE
+            mape_vals = [abs((a - p) / a) * 100 for p, a in zip(predicted, actual) if a != 0]
+            mape = sum(mape_vals) / len(mape_vals) if mape_vals else 0
+            
+            # RÂ² (coefficient of determination)
+            mean_actual = sum(actual) / n
+            ss_res = sum((a - p) ** 2 for p, a in zip(predicted, actual))
+            ss_tot = sum((a - mean_actual) ** 2 for a in actual)
+            r2 = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
+            
+            # Accuracy (100 - MAPE, capped at 0)
+            accuracy = max(0, 100 - mape)
+            
+            return {
+                'mae': round(mae, 2),
+                'rmse': round(rmse, 2),
+                'mape': round(mape, 2),
+                'r2': round(r2, 4),
+                'accuracy': round(accuracy, 1)
+            }
+        
+        # Try real ML models, fall back to statistical methods
+        metrics = {}
+        
+        if _load_ml_modules():
+            forecaster = TimeSeriesForecaster()
+            
+            try:
+                lstm_pred = forecaster.predict_with_lstm(train_data, periods=test_periods)
+                lstm_values = [d['predicted_productive_minutes'] for d in lstm_pred.get('forecast', [])]
+                metrics['lstm'] = calc_metrics(lstm_values, actual_values)
+                metrics['lstm']['status'] = 'trained'
+            except:
+                metrics['lstm'] = _fallback_metrics('lstm', train_data, actual_values, test_periods)
+            
+            try:
+                arima_pred = forecaster.predict_with_arima(train_data, periods=test_periods)
+                arima_values = [d['predicted_productive_minutes'] for d in arima_pred.get('forecast', [])]
+                metrics['arima'] = calc_metrics(arima_values, actual_values)
+                metrics['arima']['status'] = 'trained'
+            except:
+                metrics['arima'] = _fallback_metrics('arima', train_data, actual_values, test_periods)
+            
+            try:
+                prophet_pred = forecaster.predict_with_prophet(train_data, periods=test_periods)
+                prophet_values = [d['predicted_productive_minutes'] for d in prophet_pred.get('forecast', [])]
+                metrics['prophet'] = calc_metrics(prophet_values, actual_values)
+                metrics['prophet']['status'] = 'trained'
+            except:
+                metrics['prophet'] = _fallback_metrics('prophet', train_data, actual_values, test_periods)
+        else:
+            # Generate fallback metrics using statistical methods
+            fallback_preds = _generate_fallback_predictions(train_data, test_periods)
+            for model_name in ['lstm', 'arima', 'prophet']:
+                pred_values = [d['predicted_productive_minutes'] for d in fallback_preds[model_name].get('forecast', [])]
+                metrics[model_name] = calc_metrics(pred_values, actual_values)
+                metrics[model_name]['status'] = 'fallback'
+        
+        # Determine best model
+        best_model = min(metrics.keys(), key=lambda k: metrics[k].get('rmse', float('inf')))
+        
+        return jsonify({
+            'metrics': metrics,
+            'best_model': best_model,
+            'evaluation_samples': len(actual_values),
+            'training_samples': len(train_data),
+            'total_data_points': len(weekly_trends)
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+def _fallback_metrics(model_name, train_data, actual_values, test_periods):
+    """Generate fallback metrics when a specific model fails"""
+    import math
+    fallback_preds = _generate_fallback_predictions(train_data, test_periods)
+    pred_values = [d['predicted_productive_minutes'] for d in fallback_preds[model_name].get('forecast', [])]
+    n = min(len(pred_values), len(actual_values))
+    if n == 0:
+        return {'mae': 0, 'rmse': 0, 'mape': 0, 'r2': 0, 'accuracy': 0, 'status': 'fallback'}
+    pred_values = pred_values[:n]
+    act = actual_values[:n]
+    mae = sum(abs(p - a) for p, a in zip(pred_values, act)) / n
+    mse = sum((p - a) ** 2 for p, a in zip(pred_values, act)) / n
+    rmse = math.sqrt(mse)
+    mape_vals = [abs((a - p) / a) * 100 for p, a in zip(pred_values, act) if a != 0]
+    mape = sum(mape_vals) / len(mape_vals) if mape_vals else 0
+    mean_actual = sum(act) / n
+    ss_res = sum((a - p) ** 2 for p, a in zip(pred_values, act))
+    ss_tot = sum((a - mean_actual) ** 2 for a in act)
+    r2 = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
+    return {
+        'mae': round(mae, 2), 'rmse': round(rmse, 2), 'mape': round(mape, 2),
+        'r2': round(r2, 4), 'accuracy': round(max(0, 100 - mape), 1), 'status': 'fallback'
+    }
+
+
 @insights_bp.route('/ml/forecast/<model>', methods=['GET'])
 @token_required
 def get_model_forecast(model):
@@ -889,9 +1031,9 @@ def get_realtime_predictions():
                 if _load_ml_modules():
                     forecaster = TimeSeriesForecaster()
                     forecaster.train_all(df)
-                print(f"✅ Auto-trained models at {activity_count} activities")
+                print(f"âœ… Auto-trained models at {activity_count} activities")
             except Exception as e:
-                print(f"⚠️ Auto-training failed: {e}")
+                print(f"âš ï¸ Auto-training failed: {e}")
         
         # Get current predictions
         periods = request.args.get('periods', 7, type=int)
@@ -1115,4 +1257,238 @@ def _generate_fallback_predictions(weekly_trends: list, periods: int = 7) -> dic
         'arima': create_forecast('ARIMA', 0.5, 0),      # Less variation, stable
         'prophet': create_forecast('Prophet', 0.6, 0.5) # Medium variation, slight upward
     }
+
+
+@insights_bp.route('/chat', methods=['POST'])
+@token_required
+def chat_with_ai():
+    """AI productivity coach chat endpoint"""
+    data = request.get_json()
+    message = data.get('message', '')
+    context = data.get('context', '')
+    
+    if not message:
+        return jsonify({'error': 'Message required'}), 400
+    
+    try:
+        import google.generativeai as genai
+        import os
+        
+        api_key = os.environ.get('GEMINI_API_KEY') or os.environ.get('API_KEY')
+        if not api_key:
+            return jsonify({'error': 'AI not configured'}), 503
+        
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt = context if context else f"""You are ChronosAI, a productivity coaching assistant. 
+Be concise, actionable, and encouraging. Keep responses under 200 words.
+
+User: {message}
+Assistant:"""
+        
+        response = model.generate_content(prompt)
+        return jsonify({'response': response.text})
+    
+    except ImportError:
+        return jsonify({'error': 'AI module not available'}), 503
+    except Exception as e:
+        print(f"Chat AI error: {e}")
+        return jsonify({'error': 'AI temporarily unavailable'}), 503
+
+
+# â”€â”€â”€ Mood / Wellness Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+@insights_bp.route('/mood/log', methods=['POST'])
+@token_required
+def log_mood():
+    """Log daily mood entry"""
+    db = get_db()
+    data = request.get_json()
+    user_id = request.current_user['id']
+
+    mood = data.get('mood')
+    energy = data.get('energy', 3)
+    stress = data.get('stress', 3)
+    sleep_hours = data.get('sleep_hours', 7)
+    note = data.get('note', '')
+
+    if not mood or mood not in [1, 2, 3, 4, 5]:
+        return jsonify({'error': 'Mood level 1-5 required'}), 400
+
+    today = datetime.utcnow().strftime('%Y-%m-%d')
+
+    # Upsert: one entry per day
+    db.mood_logs.update_one(
+        {'user_id': str(user_id), 'date': today},
+        {'$set': {
+            'user_id': str(user_id),
+            'date': today,
+            'mood': int(mood),
+            'energy': int(energy),
+            'stress': int(stress),
+            'sleep_hours': float(sleep_hours),
+            'note': note,
+            'updated_at': datetime.utcnow()
+        }},
+        upsert=True
+    )
+
+    return jsonify({'message': 'Mood logged', 'date': today})
+
+
+@insights_bp.route('/mood/history', methods=['GET'])
+@token_required
+def mood_history():
+    """Get mood history for the current user"""
+    db = get_db()
+    user_id = request.current_user['id']
+    days = int(request.args.get('days', 14))
+
+    cutoff = (datetime.utcnow() - timedelta(days=days)).strftime('%Y-%m-%d')
+    entries = list(db.mood_logs.find(
+        {'user_id': str(user_id), 'date': {'$gte': cutoff}},
+        {'_id': 0, 'user_id': 0, 'updated_at': 0}
+    ).sort('date', 1))
+
+    return jsonify({'entries': entries})
+
+
+@insights_bp.route('/mood/correlation', methods=['GET'])
+@token_required
+def mood_correlation():
+    """Calculate correlation between mood metrics and productivity"""
+    db = get_db()
+    user_id = request.current_user['id']
+
+    # Get last 30 days of mood data
+    cutoff = (datetime.utcnow() - timedelta(days=30)).strftime('%Y-%m-%d')
+    moods = list(db.mood_logs.find(
+        {'user_id': str(user_id), 'date': {'$gte': cutoff}},
+        {'_id': 0, 'user_id': 0}
+    ).sort('date', 1))
+
+    if len(moods) < 3:
+        return jsonify({
+            'mood_productivity': 0,
+            'stress_productivity': 0,
+            'sleep_productivity': 0,
+            'energy_productivity': 0,
+            'insights': ['Log your mood for at least 3 days to see correlations.'],
+            'weekly_summary': None
+        })
+
+    # Get productivity data for matching days
+    from bson import ObjectId
+    uid = user_id
+    if isinstance(uid, str):
+        try:
+            uid = ObjectId(uid)
+        except:
+            pass
+
+    productivity_by_date = {}
+    for m in moods:
+        day_start = datetime.strptime(m['date'], '%Y-%m-%d')
+        day_end = day_start + timedelta(days=1)
+        activities = list(db.activities.find({
+            'user_id': {'$in': [str(user_id), uid]},
+            'start_time': {'$gte': day_start, '$lt': day_end}
+        }))
+        productive_mins = sum(
+            a.get('duration', 0) for a in activities
+            if a.get('category') == 'productive'
+        ) / 60
+        productivity_by_date[m['date']] = productive_mins
+
+    # Build paired arrays
+    mood_vals, stress_vals, sleep_vals, energy_vals, prod_vals = [], [], [], [], []
+    for m in moods:
+        prod = productivity_by_date.get(m['date'], 0)
+        mood_vals.append(m.get('mood', 3))
+        stress_vals.append(m.get('stress', 3))
+        sleep_vals.append(m.get('sleep_hours', 7))
+        energy_vals.append(m.get('energy', 3))
+        prod_vals.append(prod)
+
+    def pearson(x, y):
+        n = len(x)
+        if n < 2:
+            return 0
+        mx, my = sum(x)/n, sum(y)/n
+        num = sum((xi - mx)*(yi - my) for xi, yi in zip(x, y))
+        dx = sum((xi - mx)**2 for xi in x) ** 0.5
+        dy = sum((yi - my)**2 for yi in y) ** 0.5
+        if dx == 0 or dy == 0:
+            return 0
+        return round(num / (dx * dy), 3)
+
+    mood_prod = pearson(mood_vals, prod_vals)
+    stress_prod = pearson(stress_vals, prod_vals)
+    sleep_prod = pearson(sleep_vals, prod_vals)
+    energy_prod = pearson(energy_vals, prod_vals)
+
+    # Generate insights
+    insights = []
+    if mood_prod > 0.3:
+        insights.append("Your productivity strongly improves on days you feel happier. Prioritize mood-boosting activities like exercise or socializing.")
+    elif mood_prod < -0.3:
+        insights.append("Interestingly, you seem productive even on low-mood days. Consider whether you're overworking during stress.")
+    if stress_prod < -0.3:
+        insights.append("High stress clearly reduces your productivity. Try stress-reduction techniques like deep breathing or short walks.")
+    elif stress_prod > 0.2:
+        insights.append("Some stress seems to motivate you. Channel it constructively but watch for burnout signs.")
+    if sleep_prod > 0.3:
+        insights.append("More sleep significantly boosts your productivity. Aim for consistent sleep of 7-9 hours.")
+    elif sleep_prod < -0.2:
+        insights.append("Sleep hours don't strongly affect your output, but quality sleep still matters for long-term health.")
+    if energy_prod > 0.3:
+        insights.append("High-energy days are your most productive. Schedule demanding tasks when your energy peaks.")
+
+    if not insights:
+        insights.append("Keep logging daily â€” clearer patterns will emerge with more data.")
+
+    # Weekly summary
+    last_7 = [m for m in moods if m['date'] >= (datetime.utcnow() - timedelta(days=7)).strftime('%Y-%m-%d')]
+    if last_7:
+        avg_mood = sum(m['mood'] for m in last_7) / len(last_7)
+        avg_stress = sum(m.get('stress', 3) for m in last_7) / len(last_7)
+        avg_energy = sum(m.get('energy', 3) for m in last_7) / len(last_7)
+        avg_sleep = sum(m.get('sleep_hours', 7) for m in last_7) / len(last_7)
+        recent_prods = [productivity_by_date.get(m['date'], 0) for m in last_7]
+        avg_prod = sum(recent_prods) / len(recent_prods) if recent_prods else 0
+
+        # Mood trend (compare first half vs second half)
+        half = len(last_7) // 2
+        if half > 0:
+            first_half_avg = sum(m['mood'] for m in last_7[:half]) / half
+            second_half_avg = sum(m['mood'] for m in last_7[half:]) / (len(last_7) - half)
+            if second_half_avg - first_half_avg > 0.3:
+                mood_trend = 'up'
+            elif first_half_avg - second_half_avg > 0.3:
+                mood_trend = 'down'
+            else:
+                mood_trend = 'stable'
+        else:
+            mood_trend = 'stable'
+
+        weekly_summary = {
+            'avg_mood': round(avg_mood, 1),
+            'avg_stress': round(avg_stress, 1),
+            'avg_energy': round(avg_energy, 1),
+            'avg_sleep': round(avg_sleep, 1),
+            'avg_productivity': round(avg_prod, 1),
+            'mood_trend': mood_trend
+        }
+    else:
+        weekly_summary = None
+
+    return jsonify({
+        'mood_productivity': mood_prod,
+        'stress_productivity': stress_prod,
+        'sleep_productivity': sleep_prod,
+        'energy_productivity': energy_prod,
+        'insights': insights,
+        'weekly_summary': weekly_summary
+    })
 

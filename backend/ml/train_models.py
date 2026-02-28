@@ -1,4 +1,4 @@
-"""
+﻿"""
 ML Model Training Script
 Trains LSTM, ARIMA, and Prophet models on the screen time dataset
 """
@@ -167,7 +167,7 @@ def print_summary(results):
     print("="*60)
 
 def main():
-    print("\n" + "FocusFlow ML Model Training Script")
+    print("\n" + "ChronosAI ML Model Training Script")
     print("="*60)
     
     # Load dataset

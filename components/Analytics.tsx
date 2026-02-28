@@ -7,24 +7,32 @@ import { insightsApi } from '../services/api';
 import {
   BarChart3,
   TrendingUp,
+  TrendingDown,
   Calendar,
   Clock,
   Activity,
   Zap,
-  Target
+  Target,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface TrendData {
   weeklyTrends: Array<{ date: string; productive_minutes: number; distracting_minutes: number }>;
   hourlyBreakdown: Array<{ time: string; productive: number; distracted: number }>;
-  focusStats: { total_focus_time: number; avg_duration: number; completion_rate: number };
+  focusStats: { total_focus_time: number; avg_duration: number; completion_rate: number; total_sessions?: number; completed_sessions?: number };
 }
 
 const Analytics: React.FC = () => {
   const [trendData, setTrendData] = useState<TrendData | null>(null);
+  const [prevWeekData, setPrevWeekData] = useState<TrendData | null>(null);
   const [focusWindows, setFocusWindows] = useState<any | null>(null);
   const [distractions, setDistractions] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [comparisonDay, setComparisonDay] = useState(0); // 0 = today vs yesterday, index into weeklyTrends
 
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const hours = ['8am', '10am', '12pm', '2pm', '4pm', '6pm', '8pm', '10pm'];
@@ -32,14 +40,16 @@ const Analytics: React.FC = () => {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [trendsData, windowsData, distractionsData] = await Promise.all([
+        const [trendsData, prevTrendsData, windowsData, distractionsData] = await Promise.all([
           insightsApi.getTrends(7),
+          insightsApi.getTrends(14),
           insightsApi.getFocusWindows(),
           insightsApi.getDistractionPatterns()
         ]);
         setTrendData(trendsData);
-        setFocusWindows(windowsData);
+        setPrevWeekData(prevTrendsData);
         setDistractions(distractionsData);
+        setFocusWindows(windowsData);
       } catch (error) {
         console.error('Failed to fetch analytics:', error);
       } finally {
@@ -53,13 +63,24 @@ const Analytics: React.FC = () => {
   // Use ONLY real data - no mock fallbacks
   const consistencyScore = trendData?.focusStats?.completion_rate ?? 0;
 
-  // Calculate total focus time from PRODUCTIVE ACTIVITIES (tracked apps)
-  const totalFocusTime = trendData?.weeklyTrends?.reduce(
-    (sum, d) => sum + (d.productive_minutes || 0), 0
-  ) ?? 0;
+  // Use actual focus session time from focusStats, NOT raw productive_minutes from tracker
+  const totalFocusTime = trendData?.focusStats?.total_focus_time ?? 0;
 
   const avgDuration = trendData?.focusStats?.avg_duration ?? 0;
+  const totalSessions = trendData?.focusStats?.total_sessions ?? 0;
   const hasData = trendData?.weeklyTrends?.length > 0;
+
+  // Calculate streak from weekly trends - count consecutive days with productive activity
+  const streakDays = (() => {
+    if (!trendData?.weeklyTrends?.length) return 0;
+    const sorted = [...trendData.weeklyTrends].reverse(); // Most recent first
+    let streak = 0;
+    for (const day of sorted) {
+      if ((day.productive_minutes || 0) > 0) streak++;
+      else break;
+    }
+    return streak;
+  })();
 
   // Calculate weekly change from real data
   const weeklyChange = trendData?.weeklyTrends?.length
@@ -233,12 +254,17 @@ const Analytics: React.FC = () => {
           </div>
 
           <h3 className="font-display font-bold text-slate-900 dark:text-white mb-2">Consistency Score</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px]">Your performance is extremely stable compared to last month.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px]">
+            {consistencyScore >= 80 ? 'Excellent consistency! Keep up the great work.' :
+             consistencyScore >= 50 ? 'Good consistency. Room to improve focus session completion.' :
+             consistencyScore > 0 ? 'Building habits. Try completing more focus sessions.' :
+             'Start focus sessions to build your consistency score.'}
+          </p>
 
           <div className="mt-6 w-full pt-6 border-t border-slate-100 dark:border-slate-800">
             <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-widest px-2">
               <span>Streak</span>
-              <span className="text-indigo-600 dark:text-indigo-400">12 Days</span>
+              <span className="text-indigo-600 dark:text-indigo-400">{streakDays} {streakDays === 1 ? 'Day' : 'Days'}</span>
             </div>
           </div>
         </div>
@@ -327,7 +353,7 @@ const Analytics: React.FC = () => {
               <h4 className="text-4xl font-display font-bold">
                 {Math.floor(totalFocusTime / 60)}h {Math.round(totalFocusTime % 60)}m
               </h4>
-              <p className="text-indigo-200 text-[10px]">From productive apps this week</p>
+              <p className="text-indigo-200 text-[10px]">From focus sessions this week</p>
             </div>
             <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
               <Target className="w-8 h-8 text-white" />
@@ -335,6 +361,206 @@ const Analytics: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Day-over-Day Comparison Panel */}
+      {trendData?.weeklyTrends && trendData.weeklyTrends.length >= 2 && (
+        <DayComparison
+          weeklyTrends={trendData.weeklyTrends}
+          prevWeekTrends={prevWeekData?.weeklyTrends}
+          comparisonDay={comparisonDay}
+          setComparisonDay={setComparisonDay}
+        />
+      )}
+    </div>
+  );
+};
+
+// Day-over-Day Comparison Component
+const DayComparison: React.FC<{
+  weeklyTrends: Array<{ date: string; productive_minutes: number; distracting_minutes: number }>;
+  prevWeekTrends?: Array<{ date: string; productive_minutes: number; distracting_minutes: number }>;
+  comparisonDay: number;
+  setComparisonDay: (d: number) => void;
+}> = ({ weeklyTrends, prevWeekTrends, comparisonDay, setComparisonDay }) => {
+  const trends = [...weeklyTrends].reverse(); // Most recent first
+  const today = trends[comparisonDay];
+  const yesterday = trends[comparisonDay + 1];
+
+  if (!today || !yesterday) return null;
+
+  const todayProd = today.productive_minutes || 0;
+  const yesterdayProd = yesterday.productive_minutes || 0;
+  const todayDist = today.distracting_minutes || 0;
+  const yesterdayDist = yesterday.distracting_minutes || 0;
+
+  const prodChange = yesterdayProd > 0 ? Math.round(((todayProd - yesterdayProd) / yesterdayProd) * 100) : 0;
+  const distChange = yesterdayDist > 0 ? Math.round(((todayDist - yesterdayDist) / yesterdayDist) * 100) : 0;
+  const todayFocus = todayProd + todayDist > 0 ? Math.round((todayProd / (todayProd + todayDist)) * 100) : 0;
+  const yesterdayFocus = yesterdayProd + yesterdayDist > 0 ? Math.round((yesterdayProd / (yesterdayProd + yesterdayDist)) * 100) : 0;
+  const focusChange = yesterdayFocus > 0 ? todayFocus - yesterdayFocus : 0;
+
+  // Week-over-week comparison
+  const thisWeekTotal = weeklyTrends.reduce((sum, d) => sum + (d.productive_minutes || 0), 0);
+  const prevWeekTotal = prevWeekTrends
+    ? prevWeekTrends.slice(0, 7).reduce((sum, d) => sum + (d.productive_minutes || 0), 0)
+    : 0;
+  const weekChange = prevWeekTotal > 0 ? Math.round(((thisWeekTotal - prevWeekTotal) / prevWeekTotal) * 100) : 0;
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  const ChangeIndicator = ({ value, invertColors = false }: { value: number; invertColors?: boolean }) => {
+    const isPositive = invertColors ? value < 0 : value > 0;
+    const isNeutral = value === 0;
+    return (
+      <span className={`inline-flex items-center gap-0.5 text-xs font-bold ${
+        isNeutral ? 'text-slate-400' : isPositive ? 'text-emerald-500' : 'text-rose-500'
+      }`}>
+        {isNeutral ? <Minus className="w-3 h-3" /> : isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+        {Math.abs(value)}%
+      </span>
+    );
+  };
+
+  return (
+    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-violet-50 dark:bg-violet-500/10 rounded-xl text-violet-500">
+            <Calendar className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-display font-bold text-slate-900 dark:text-white">Day Comparison</h3>
+            <p className="text-[10px] text-slate-500">Compare performance across days</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            title="Previous day"
+            aria-label="Previous day"
+            onClick={() => setComparisonDay(Math.min(comparisonDay + 1, trends.length - 2))}
+            disabled={comparisonDay >= trends.length - 2}
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4 text-slate-500" />
+          </button>
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-400 min-w-[80px] text-center">
+            {formatDate(today.date)}
+          </span>
+          <button
+            title="Next day"
+            aria-label="Next day"
+            onClick={() => setComparisonDay(Math.max(comparisonDay - 1, 0))}
+            disabled={comparisonDay <= 0}
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 transition-colors"
+          >
+            <ChevronRight className="w-4 h-4 text-slate-500" />
+          </button>
+        </div>
+      </div>
+
+      {/* Side-by-side comparison */}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Today */}
+        <div className="bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl p-4 space-y-3">
+          <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">{formatDate(today.date)}</p>
+          <div>
+            <p className="text-2xl font-display font-bold text-slate-900 dark:text-white">{todayProd}m</p>
+            <p className="text-[10px] text-slate-500">Productive</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-rose-500">{todayDist}m</p>
+            <p className="text-[10px] text-slate-500">Distracted</p>
+          </div>
+          <div className="pt-2 border-t border-indigo-200/50 dark:border-indigo-500/20">
+            <p className="text-lg font-bold text-slate-800 dark:text-white">{todayFocus}%</p>
+            <p className="text-[10px] text-slate-500">Focus Ratio</p>
+          </div>
+        </div>
+
+        {/* Yesterday */}
+        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 space-y-3">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{formatDate(yesterday.date)}</p>
+          <div>
+            <p className="text-2xl font-display font-bold text-slate-900 dark:text-white">{yesterdayProd}m</p>
+            <p className="text-[10px] text-slate-500">Productive</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-rose-500">{yesterdayDist}m</p>
+            <p className="text-[10px] text-slate-500">Distracted</p>
+          </div>
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+            <p className="text-lg font-bold text-slate-800 dark:text-white">{yesterdayFocus}%</p>
+            <p className="text-[10px] text-slate-500">Focus Ratio</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Change metrics */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
+          <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Productivity</p>
+          <ChangeIndicator value={prodChange} />
+        </div>
+        <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
+          <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Distractions</p>
+          <ChangeIndicator value={distChange} invertColors />
+        </div>
+        <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
+          <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Focus</p>
+          <ChangeIndicator value={focusChange} />
+        </div>
+      </div>
+
+      {/* Visual bar comparison */}
+      <div className="space-y-3">
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Visual Comparison</p>
+        {[
+          { label: 'Productive Time', today: todayProd, yesterday: yesterdayProd, color: 'indigo' },
+          { label: 'Distracted Time', today: todayDist, yesterday: yesterdayDist, color: 'rose' },
+          { label: 'Focus Ratio', today: todayFocus, yesterday: yesterdayFocus, color: 'emerald', isPercent: true },
+        ].map(({ label, today: t, yesterday: y, color, isPercent }) => {
+          const maxVal = Math.max(t, y, 1);
+          const tWidth = isPercent ? t : (t / maxVal) * 100;
+          const yWidth = isPercent ? y : (y / maxVal) * 100;
+          return (
+            <div key={label} className="space-y-1">
+              <div className="flex justify-between text-[10px]">
+                <span className="text-slate-500 font-bold">{label}</span>
+                <span className="text-slate-400">{t}{isPercent ? '%' : 'm'} vs {y}{isPercent ? '%' : 'm'}</span>
+              </div>
+              <div className="space-y-1">
+                <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div className={`h-full bg-${color}-500 rounded-full transition-all duration-500`} style={{ width: `${tWidth}%` }}></div>
+                </div>
+                <div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div className={`h-full bg-${color}-300 dark:bg-${color}-700 rounded-full transition-all duration-500`} style={{ width: `${yWidth}%` }}></div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Weekly comparison summary */}
+      {prevWeekTrends && prevWeekTrends.length > 0 && (
+        <div className="bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-500/10 dark:to-indigo-500/10 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-violet-700 dark:text-violet-300">Week-over-Week</p>
+            <p className="text-[10px] text-slate-500 mt-0.5">
+              This week: {Math.round(thisWeekTotal)}m vs Last week: {Math.round(prevWeekTotal)}m productive
+            </p>
+          </div>
+          <div className={`flex items-center gap-1 text-sm font-bold ${
+            weekChange >= 0 ? 'text-emerald-500' : 'text-rose-500'
+          }`}>
+            {weekChange >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+            {weekChange >= 0 ? '+' : ''}{weekChange}%
+          </div>
+        </div>
+      )}
     </div>
   );
 };

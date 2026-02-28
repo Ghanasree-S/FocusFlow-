@@ -1,5 +1,5 @@
-"""
-Database models for FocusFlow
+﻿"""
+Database models for ChronosAI
 """
 from .user import UserModel
 from .task import TaskModel

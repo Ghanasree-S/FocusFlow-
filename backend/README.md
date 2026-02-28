@@ -1,4 +1,4 @@
-# FocusFlow Backend
+﻿# ChronosAI Backend
 
 Python Flask backend with MongoDB and ML-based productivity forecasting.
 
@@ -61,5 +61,5 @@ Server runs on http://localhost:5000
 
 ## Demo Credentials
 After running `python seed.py`:
-- Email: demo@focusflow.ai
+- Email: demo@ChronosAI.ai
 - Password: demo123

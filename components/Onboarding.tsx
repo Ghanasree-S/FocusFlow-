@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
@@ -11,7 +11,11 @@ import {
   ArrowRight, 
   CheckCircle2,
   Settings,
-  BrainCircuit
+  BrainCircuit,
+  Eye,
+  Bell,
+  BarChart3,
+  Shield
 } from 'lucide-react';
 
 interface OnboardingProps {
@@ -21,8 +25,23 @@ interface OnboardingProps {
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const [step, setStep] = useState(1);
   const [style, setStyle] = useState<'Balanced' | 'High-focus' | 'Flexible'>('Balanced');
+  
+  // Consent toggles
+  const [consentScreenTime, setConsentScreenTime] = useState(true);
+  const [consentAppCategorization, setConsentAppCategorization] = useState(true);
+  const [consentNotifications, setConsentNotifications] = useState(true);
+  const [consentAnalytics, setConsentAnalytics] = useState(true);
 
   const nextStep = () => {
+    if (step === 3) {
+      // Save consent preferences before moving on
+      localStorage.setItem('ChronosAI_tracking_enabled', String(consentScreenTime));
+      localStorage.setItem('ChronosAI_activity_visible', String(consentAppCategorization));
+      localStorage.setItem('ChronosAI_notif_enabled', String(consentNotifications));
+      localStorage.setItem('ChronosAI_analytics_consent', String(consentAnalytics));
+      localStorage.setItem('ChronosAI_consent_given', 'true');
+      localStorage.setItem('ChronosAI_consent_date', new Date().toISOString());
+    }
     if (step < 4) setStep(step + 1);
     else onComplete();
   };
@@ -36,7 +55,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               <div className="w-20 h-20 bg-indigo-600 rounded-3xl mx-auto flex items-center justify-center text-white shadow-2xl shadow-indigo-600/30 mb-8">
                 <Zap className="w-12 h-12 fill-current" />
               </div>
-              <h2 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-4">Welcome to FocusFlow</h2>
+              <h2 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-4">Welcome to ChronosAI</h2>
               <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
                 The intelligent productivity system that learns your patterns to help you reach peak performance.
               </p>
@@ -81,34 +100,48 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         );
       case 3:
         return (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
             <div className="text-center">
               <h2 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-4">Tracking Permissions</h2>
               <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                FocusFlow needs basic usage data to build your personal productivity model.
+                Choose what data ChronosAI can collect to build your personal productivity model.
               </p>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800">
-               <ul className="space-y-4">
-                 <li className="flex gap-4">
-                   <div className="shrink-0 w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 flex items-center justify-center">
-                     <CheckCircle2 className="w-5 h-5" />
-                   </div>
-                   <p className="text-sm text-slate-600 dark:text-slate-400"><strong>Screen Time:</strong> Identify peak activity periods.</p>
-                 </li>
-                 <li className="flex gap-4">
-                   <div className="shrink-0 w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 flex items-center justify-center">
-                     <CheckCircle2 className="w-5 h-5" />
-                   </div>
-                   <p className="text-sm text-slate-600 dark:text-slate-400"><strong>App Categorization:</strong> Distinguish work from play.</p>
-                 </li>
-                 <li className="flex gap-4">
-                   <div className="shrink-0 w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 flex items-center justify-center">
-                     <CheckCircle2 className="w-5 h-5" />
-                   </div>
-                   <p className="text-sm text-slate-600 dark:text-slate-400"><strong>Notifications:</strong> Block distractions during focus mode.</p>
-                 </li>
-               </ul>
+            <div className="bg-slate-50 dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-3">
+              <ConsentToggle
+                icon={<Eye className="w-4 h-4 text-indigo-500" />}
+                title="Screen Time Tracking"
+                description="Monitor active window time to identify peak activity periods"
+                value={consentScreenTime}
+                onChange={() => setConsentScreenTime(!consentScreenTime)}
+                required
+              />
+              <ConsentToggle
+                icon={<BarChart3 className="w-4 h-4 text-emerald-500" />}
+                title="App Categorization"
+                description="Classify apps as productive or distracting for analytics"
+                value={consentAppCategorization}
+                onChange={() => setConsentAppCategorization(!consentAppCategorization)}
+              />
+              <ConsentToggle
+                icon={<Bell className="w-4 h-4 text-amber-500" />}
+                title="Notification Alerts"
+                description="Send focus reminders and deadline notifications"
+                value={consentNotifications}
+                onChange={() => setConsentNotifications(!consentNotifications)}
+              />
+              <ConsentToggle
+                icon={<Shield className="w-4 h-4 text-rose-500" />}
+                title="ML Analytics"
+                description="Use your data for LSTM, ARIMA & Prophet predictions"
+                value={consentAnalytics}
+                onChange={() => setConsentAnalytics(!consentAnalytics)}
+              />
+            </div>
+            <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl border border-indigo-200 dark:border-indigo-600/30">
+              <p className="text-[10px] text-indigo-600 dark:text-indigo-400">
+                <strong>Privacy Note:</strong> All data is stored locally and on your private MongoDB instance. You can change these preferences anytime in Settings â†’ Privacy.
+              </p>
             </div>
           </div>
         );
@@ -170,6 +203,37 @@ const FeatureItem = ({ icon, text }: any) => (
       {icon}
     </div>
     <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{text}</span>
+  </div>
+);
+
+const ConsentToggle = ({ icon, title, description, value, onChange, required }: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  value: boolean;
+  onChange: () => void;
+  required?: boolean;
+}) => (
+  <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+    <div className="flex items-center gap-3 flex-1 min-w-0">
+      <div className="shrink-0">{icon}</div>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <h5 className="font-bold text-sm text-slate-700 dark:text-white truncate">{title}</h5>
+          {required && <span className="text-[9px] font-bold text-indigo-500 bg-indigo-50 dark:bg-indigo-500/20 px-1.5 py-0.5 rounded-full shrink-0">Required</span>}
+        </div>
+        <p className="text-[10px] text-slate-500 truncate">{description}</p>
+      </div>
+    </div>
+    <button
+      onClick={required ? undefined : onChange}
+      disabled={required}
+      className={`shrink-0 ml-3 w-12 h-7 rounded-full p-0.5 transition-all duration-300 ${required ? 'cursor-not-allowed opacity-70' : ''} ${value ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-600'}`}
+    >
+      <div className={`w-6 h-6 rounded-full bg-white shadow-sm flex items-center justify-center transition-all ${value ? 'translate-x-5' : 'translate-x-0'}`}>
+        {value ? <CheckCircle2 className="w-3 h-3 text-indigo-600" /> : null}
+      </div>
+    </button>
   </div>
 );
 

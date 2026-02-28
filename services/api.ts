@@ -1,19 +1,19 @@
-/**
- * FocusFlow API Service
+﻿/**
+ * ChronosAI API Service
  * Handles all backend API calls with JWT authentication
  */
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
 // Token management - uses sessionStorage so token clears when browser closes
-let authToken: string | null = sessionStorage.getItem('focusflow_token');
+let authToken: string | null = sessionStorage.getItem('ChronosAI_token');
 
 export const setAuthToken = (token: string | null) => {
     authToken = token;
     if (token) {
-        sessionStorage.setItem('focusflow_token', token);
+        sessionStorage.setItem('ChronosAI_token', token);
     } else {
-        sessionStorage.removeItem('focusflow_token');
+        sessionStorage.removeItem('ChronosAI_token');
     }
 };
 
@@ -60,10 +60,12 @@ export const authApi = {
         return data;
     },
 
-    login: async (email: string, password: string) => {
+    login: async (email: string, password: string, totp_code?: string) => {
+        const body: any = { email, password };
+        if (totp_code) body.totp_code = totp_code;
         const data = await apiRequest('/auth/login', {
             method: 'POST',
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify(body),
         });
         if (data.token) {
             setAuthToken(data.token);
@@ -84,6 +86,36 @@ export const authApi = {
 
     logout: () => {
         setAuthToken(null);
+    },
+
+    // 2FA methods
+    setup2FA: async () => {
+        return await apiRequest('/auth/2fa/setup', { method: 'POST' });
+    },
+
+    verify2FA: async (code: string) => {
+        return await apiRequest('/auth/2fa/verify', {
+            method: 'POST',
+            body: JSON.stringify({ code }),
+        });
+    },
+
+    disable2FA: async (password: string) => {
+        return await apiRequest('/auth/2fa/disable', {
+            method: 'POST',
+            body: JSON.stringify({ password }),
+        });
+    },
+
+    deleteAccount: async () => {
+        return await apiRequest('/auth/account', { method: 'DELETE' });
+    },
+
+    clearData: async (retentionDays: number) => {
+        return await apiRequest('/auth/clear-data', {
+            method: 'POST',
+            body: JSON.stringify({ retention_days: retentionDays }),
+        });
     },
 };
 
@@ -240,6 +272,10 @@ export const insightsApi = {
         return await apiRequest('/insights/ml/compare');
     },
 
+    getEvaluationMetrics: async () => {
+        return await apiRequest('/insights/ml/evaluation-metrics');
+    },
+
     getModelForecast: async (model: 'lstm' | 'arima' | 'prophet' | 'ensemble', periods: number = 7) => {
         return await apiRequest(`/insights/ml/forecast/${model}?periods=${periods}`);
     },
@@ -288,6 +324,35 @@ export const trackerApi = {
     },
 };
 
+// ============ WELLNESS / MOOD ============
+export const wellnessApi = {
+    logMood: async (data: { mood: number; energy: number; stress: number; sleep_hours: number; note?: string }) => {
+        return await apiRequest('/insights/mood/log', { method: 'POST', body: JSON.stringify(data) });
+    },
+    getMoodHistory: async (days = 14) => {
+        return await apiRequest(`/insights/mood/history?days=${days}`);
+    },
+    getCorrelation: async () => {
+        return await apiRequest('/insights/mood/correlation');
+    },
+};
+
+// ============ TEAM ============
+export const teamApi = {
+    create: async (name: string) => {
+        return await apiRequest('/team/create', { method: 'POST', body: JSON.stringify({ name }) });
+    },
+    join: async (invite_code: string) => {
+        return await apiRequest('/team/join', { method: 'POST', body: JSON.stringify({ invite_code }) });
+    },
+    leave: async () => {
+        return await apiRequest('/team/leave', { method: 'POST' });
+    },
+    dashboard: async () => {
+        return await apiRequest('/team/dashboard');
+    },
+};
+
 // ============ HEALTH CHECK ============
 export const healthCheck = async () => {
     try {
@@ -298,6 +363,52 @@ export const healthCheck = async () => {
     }
 };
 
+// ============ NOVEL RESEARCH FEATURES ============
+export const novelApi = {
+    /** Get all 6 novel feature results in one call */
+    getOverview: async () => {
+        return await apiRequest('/novel/overview');
+    },
+
+    /** SHAP Explainable AI */
+    getShap: async () => {
+        return await apiRequest('/novel/shap');
+    },
+
+    /** Digital Fatigue Index */
+    getFatigue: async () => {
+        return await apiRequest('/novel/fatigue');
+    },
+
+    /** Context-Switch Cost & Attention Residue */
+    getContextSwitch: async () => {
+        return await apiRequest('/novel/context-switch');
+    },
+
+    /** Procrastination Sequence Mining */
+    getProcrastination: async () => {
+        return await apiRequest('/novel/procrastination');
+    },
+
+    /** Adaptive Ensemble Weights */
+    getEnsembleWeights: async () => {
+        return await apiRequest('/novel/ensemble-weights');
+    },
+
+    /** Simulate ensemble adaptation */
+    simulateEnsemble: async (days: number = 14) => {
+        return await apiRequest('/novel/ensemble-weights/simulate', {
+            method: 'POST',
+            body: JSON.stringify({ days }),
+        });
+    },
+
+    /** Mood–Productivity VAR / Granger Causality */
+    getMoodProductivity: async () => {
+        return await apiRequest('/novel/mood-productivity');
+    },
+};
+
 // Export all APIs
 export default {
     auth: authApi,
@@ -305,5 +416,8 @@ export default {
     activities: activitiesApi,
     focus: focusApi,
     insights: insightsApi,
+    wellness: wellnessApi,
+    team: teamApi,
+    novel: novelApi,
     healthCheck,
 };

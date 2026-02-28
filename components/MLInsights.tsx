@@ -27,7 +27,9 @@ import {
     Lightbulb,
     Minus,
     ChevronRight,
-    BrainCircuit
+    BrainCircuit,
+    Award,
+    Gauge
 } from 'lucide-react';
 
 interface ModelPrediction {
@@ -94,6 +96,13 @@ const MLInsights: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isTraining, setIsTraining] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [evalMetrics, setEvalMetrics] = useState<{
+        metrics: Record<string, { mae: number; rmse: number; mape: number; r2: number; accuracy: number; status: string }>;
+        best_model: string;
+        evaluation_samples: number;
+        training_samples: number;
+    } | null>(null);
+    const [metricsLoading, setMetricsLoading] = useState(false);
 
     // Graph dimensions
     const graphWidth = 700;
@@ -161,12 +170,29 @@ const MLInsights: React.FC = () => {
         try {
             await insightsApi.trainModels();
             await fetchMLData();
+            await fetchEvalMetrics();
         } catch (err: any) {
             setError(err.message || 'Training failed');
         } finally {
             setIsTraining(false);
         }
     };
+
+    const fetchEvalMetrics = async () => {
+        setMetricsLoading(true);
+        try {
+            const data = await insightsApi.getEvaluationMetrics();
+            setEvalMetrics(data);
+        } catch {
+            // Metrics may not be available with insufficient data — that's ok
+        } finally {
+            setMetricsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchEvalMetrics();
+    }, []);
 
     const getModelColor = (model: string) => {
         switch (model) {
@@ -652,6 +678,128 @@ const MLInsights: React.FC = () => {
                     );
                 })}
             </div>
+
+            {/* Evaluation Metrics Panel */}
+            {evalMetrics && (
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="font-display font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                            <Gauge className="w-5 h-5 text-indigo-500" />
+                            Model Evaluation Metrics
+                        </h3>
+                        <div className="flex items-center gap-3 text-xs text-slate-500">
+                            <span>{evalMetrics.training_samples} train / {evalMetrics.evaluation_samples} test samples</span>
+                            <button
+                                onClick={fetchEvalMetrics}
+                                disabled={metricsLoading}
+                                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                            >
+                                <RefreshCw className={`w-3.5 h-3.5 ${metricsLoading ? 'animate-spin' : ''}`} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Best Model Badge */}
+                    <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-500/10 dark:to-yellow-500/10 border border-amber-200 dark:border-amber-600/30 rounded-2xl flex items-center gap-4">
+                        <div className="w-10 h-10 bg-amber-100 dark:bg-amber-500/20 rounded-xl flex items-center justify-center">
+                            <Award className="w-5 h-5 text-amber-600" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-amber-600 uppercase tracking-widest">Best Performing Model</p>
+                            <p className="text-lg font-display font-bold text-amber-800 dark:text-amber-200">
+                                {evalMetrics.best_model.toUpperCase()}
+                                <span className="text-sm font-normal text-amber-600 ml-2">
+                                    — Lowest RMSE ({evalMetrics.metrics[evalMetrics.best_model]?.rmse})
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Metrics Table */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-slate-200 dark:border-slate-800">
+                                    <th className="text-left py-3 px-4 font-bold text-slate-500">Model</th>
+                                    <th className="text-right py-3 px-4 font-bold text-slate-500" title="Mean Absolute Error">MAE ↓</th>
+                                    <th className="text-right py-3 px-4 font-bold text-slate-500" title="Root Mean Squared Error">RMSE ↓</th>
+                                    <th className="text-right py-3 px-4 font-bold text-slate-500" title="Mean Absolute Percentage Error">MAPE ↓</th>
+                                    <th className="text-right py-3 px-4 font-bold text-slate-500" title="R-Squared">R² ↑</th>
+                                    <th className="text-right py-3 px-4 font-bold text-slate-500">Accuracy</th>
+                                    <th className="text-right py-3 px-4 font-bold text-slate-500">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(['lstm', 'arima', 'prophet'] as const).map((modelKey) => {
+                                    const m = evalMetrics.metrics[modelKey];
+                                    if (!m) return null;
+                                    const isBest = modelKey === evalMetrics.best_model;
+                                    const colors = getModelColor(modelKey);
+                                    return (
+                                        <tr key={modelKey} className={`border-b border-slate-100 dark:border-slate-800 ${isBest ? 'bg-amber-50/50 dark:bg-amber-500/5' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
+                                            <td className="py-3 px-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.main }}></div>
+                                                    <span className="font-bold text-slate-700 dark:text-slate-300">
+                                                        {modelKey.toUpperCase()}
+                                                    </span>
+                                                    {isBest && <Award className="w-3.5 h-3.5 text-amber-500" />}
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-4 text-right font-mono font-bold" style={{ color: colors.main }}>
+                                                {m.mae}
+                                            </td>
+                                            <td className="py-3 px-4 text-right font-mono font-bold" style={{ color: colors.main }}>
+                                                {m.rmse}
+                                            </td>
+                                            <td className="py-3 px-4 text-right font-mono font-bold" style={{ color: colors.main }}>
+                                                {m.mape}%
+                                            </td>
+                                            <td className="py-3 px-4 text-right font-mono font-bold" style={{ color: colors.main }}>
+                                                {m.r2}
+                                            </td>
+                                            <td className="py-3 px-4 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <div className="w-16 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                        <div
+                                                            className="h-full rounded-full"
+                                                            style={{ width: `${m.accuracy}%`, backgroundColor: colors.main }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="font-mono font-bold text-slate-700 dark:text-slate-300 w-12 text-right">
+                                                        {m.accuracy}%
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-4 text-right">
+                                                <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${m.status === 'trained' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10' : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10'}`}>
+                                                    {m.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Metric Explanations */}
+                    <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-3">
+                        {[
+                            { label: 'MAE', desc: 'Mean Absolute Error — average magnitude of errors' },
+                            { label: 'RMSE', desc: 'Root Mean Squared Error — penalizes large errors more' },
+                            { label: 'MAPE', desc: 'Mean Absolute Percentage Error — error as % of actual' },
+                            { label: 'R²', desc: 'Coefficient of Determination — variance explained (higher is better)' },
+                            { label: 'Accuracy', desc: '100 - MAPE — overall prediction accuracy' },
+                        ].map((metric) => (
+                            <div key={metric.label} className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                                <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{metric.label}</p>
+                                <p className="text-[10px] text-slate-500 mt-0.5">{metric.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Detailed Predictions Table */}
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8">

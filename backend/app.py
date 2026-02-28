@@ -1,5 +1,5 @@
-"""
-FocusFlow Backend - Main Application Entry Point
+﻿"""
+ChronosAI Backend - Main Application Entry Point
 Includes:
 - Auto database seeding (creates demo user if not exists)
 - Integrated activity tracker that runs in background
@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from flask import Flask, jsonify
 from flask_cors import CORS
 from config import Config
-from routes import auth_bp, tasks_bp, activities_bp, focus_bp, insights_bp, tracker_bp
+from routes import auth_bp, tasks_bp, activities_bp, focus_bp, insights_bp, tracker_bp, team_bp, novel_bp
 
 # Activity Tracker Imports
 import requests
@@ -27,7 +27,7 @@ try:
     TRACKER_AVAILABLE = True
 except ImportError:
     TRACKER_AVAILABLE = False
-    print("⚠️  pygetwindow not installed. Run: pip install pygetwindow", flush=True)
+    print("âš ï¸  pygetwindow not installed. Run: pip install pygetwindow", flush=True)
 
 from datetime import datetime
 
@@ -62,7 +62,7 @@ def categorize_app(app_name: str) -> str:
     return 'neutral'
 
 def get_category_emoji(category: str) -> str:
-    return {'productive': '🟢', 'distracting': '🔴', 'neutral': '🟡'}.get(category, '⚪')
+    return {'productive': 'ðŸŸ¢', 'distracting': 'ðŸ”´', 'neutral': 'ðŸŸ¡'}.get(category, 'âšª')
 
 # Browser names to detect
 BROWSERS = ['google chrome', 'chrome', 'firefox', 'mozilla', 'edge', 'safari', 'opera', 'brave']
@@ -250,8 +250,8 @@ def run_tracker_thread_with_token(token: str, user_email: str, interval: int = 1
     global active_tracker
     
     print("", flush=True)
-    print(f"🎯 ACTIVITY TRACKER: Started for {user_email}", flush=True)
-    print(f"🎯 ACTIVITY TRACKER: 📊 Tracking every {interval} seconds", flush=True)
+    print(f"ðŸŽ¯ ACTIVITY TRACKER: Started for {user_email}", flush=True)
+    print(f"ðŸŽ¯ ACTIVITY TRACKER: ðŸ“Š Tracking every {interval} seconds", flush=True)
     print("=" * 70, flush=True)
     print("TIME      | CURRENT WINDOW                              | STATUS", flush=True)
     print("=" * 70, flush=True)
@@ -281,28 +281,28 @@ def run_tracker_thread_with_token(token: str, user_email: str, interval: int = 1
                         if success:
                             records_saved += 1
                             prev_emoji = get_category_emoji(prev_category)
-                            print(f"[{ts}] | 💾 SAVED TO DB: {current_app[:30]} | {prev_emoji} {duration:.2f}min (#{records_saved})", flush=True)
+                            print(f"[{ts}] | ðŸ’¾ SAVED TO DB: {current_app[:30]} | {prev_emoji} {duration:.2f}min (#{records_saved})", flush=True)
                     
                     app_start_time = time.time()
             
             # Check if tracker should stop
             if not active_tracker['running']:
-                print(f"[{ts}] | 🛑 TRACKER STOPPED", flush=True)
+                print(f"[{ts}] | ðŸ›‘ TRACKER STOPPED", flush=True)
                 break
                 
                 current_app = window_info['app_name']
             else:
-                print(f"[{ts}] | (No active window)                          | ⚪ Waiting", flush=True)
+                print(f"[{ts}] | (No active window)                          | âšª Waiting", flush=True)
             
             time.sleep(interval)
         except Exception as e:
-            print(f"[{ts}] | ERROR: {str(e)[:35]}                  | ⚠️", flush=True)
+            print(f"[{ts}] | ERROR: {str(e)[:35]}                  | âš ï¸", flush=True)
             time.sleep(interval)
 
 def test_mongodb_and_seed():
     """Test MongoDB connection and create demo user if needed"""
     print("", flush=True)
-    print("📊 Connecting to MongoDB...", flush=True)
+    print("ðŸ“Š Connecting to MongoDB...", flush=True)
     
     try:
         from utils.db import get_db
@@ -311,36 +311,36 @@ def test_mongodb_and_seed():
         db = get_db()
         collections = db.list_collection_names()
         
-        print(f"✅ MongoDB Connected!", flush=True)
+        print(f"âœ… MongoDB Connected!", flush=True)
         print(f"   Database: {Config.MONGO_DB_NAME}", flush=True)
         print(f"   Collections: {', '.join(collections) if collections else '(new database)'}", flush=True)
         
         # Auto-create demo user if not exists
         print("", flush=True)
-        print("👤 Checking demo user...", flush=True)
+        print("ðŸ‘¤ Checking demo user...", flush=True)
         
         user_model = UserModel(db)
-        existing_user = user_model.find_by_email('demo@focusflow.ai')
+        existing_user = user_model.find_by_email('demo@ChronosAI.ai')
         
         if existing_user:
-            print("   ✅ Demo user exists", flush=True)
+            print("   âœ… Demo user exists", flush=True)
         else:
             user_model.create_user(
                 name='Demo User',
-                email='demo@focusflow.ai',
+                email='demo@ChronosAI.ai',
                 password='demo123',
                 style='Balanced',
                 goals=['Improve focus', 'Track productivity']
             )
-            print("   ✅ Demo user created!", flush=True)
+            print("   âœ… Demo user created!", flush=True)
         
-        print("   Email: demo@focusflow.ai", flush=True)
+        print("   Email: demo@ChronosAI.ai", flush=True)
         print("   Password: demo123", flush=True)
         
         return True
         
     except Exception as e:
-        print(f"❌ MongoDB Connection Failed!", flush=True)
+        print(f"âŒ MongoDB Connection Failed!", flush=True)
         print(f"   Error: {str(e)}", flush=True)
         print("", flush=True)
         print("   Please check:", flush=True)
@@ -368,14 +368,16 @@ def create_app():
     app.register_blueprint(focus_bp)
     app.register_blueprint(insights_bp)
     app.register_blueprint(tracker_bp)
+    app.register_blueprint(team_bp)
+    app.register_blueprint(novel_bp)
     
     @app.route('/api/health', methods=['GET'])
     def health_check():
-        return jsonify({'status': 'healthy', 'service': 'FocusFlow API', 'version': '1.0.0'})
+        return jsonify({'status': 'healthy', 'service': 'ChronosAI API', 'version': '1.0.0'})
     
     @app.route('/', methods=['GET'])
     def root():
-        return jsonify({'message': 'Welcome to FocusFlow API'})
+        return jsonify({'message': 'Welcome to ChronosAI API'})
     
     @app.errorhandler(404)
     def not_found(error):
@@ -392,19 +394,19 @@ app = create_app()
 if __name__ == '__main__':
     print("", flush=True)
     print("=" * 70, flush=True)
-    print("🚀 FOCUSFLOW BACKEND SERVER", flush=True)
+    print("ðŸš€ ChronosAI BACKEND SERVER", flush=True)
     print("=" * 70, flush=True)
     
     # Test MongoDB and auto-seed
     if not test_mongodb_and_seed():
         print("", flush=True)
-        print("⚠️  Cannot start without MongoDB. Exiting.", flush=True)
+        print("âš ï¸  Cannot start without MongoDB. Exiting.", flush=True)
         sys.exit(1)
     
     print("", flush=True)
-    print("🌐 Server: http://localhost:5000", flush=True)
+    print("ðŸŒ Server: http://localhost:5000", flush=True)
     print("", flush=True)
-    print("📡 API Endpoints:", flush=True)
+    print("ðŸ“¡ API Endpoints:", flush=True)
     print("   POST /api/auth/login", flush=True)
     print("   GET  /api/insights/dashboard", flush=True)
     print("   GET  /api/insights/forecast", flush=True)
@@ -412,9 +414,9 @@ if __name__ == '__main__':
     
     # Tracker will start when user logs in via API
     if TRACKER_AVAILABLE:
-        print("🎯 ACTIVITY TRACKER: Ready (starts when user logs in)", flush=True)
+        print("ðŸŽ¯ ACTIVITY TRACKER: Ready (starts when user logs in)", flush=True)
     else:
-        print("⚠️  Install pygetwindow: pip install pygetwindow", flush=True)
+        print("âš ï¸  Install pygetwindow: pip install pygetwindow", flush=True)
     
     print("", flush=True)
     app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)

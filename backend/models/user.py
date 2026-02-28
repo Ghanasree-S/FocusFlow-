@@ -4,6 +4,7 @@ User Model and Operations
 from datetime import datetime
 from bson import ObjectId
 import bcrypt
+import pyotp
 
 class UserModel:
     """User database operations"""
@@ -55,6 +56,48 @@ class UserModel:
             {'$set': filtered_updates}
         )
         return self.find_by_id(user_id)
+
+    def setup_2fa(self, user_id: str) -> str:
+        """Generate and store a TOTP secret for 2FA setup"""
+        secret = pyotp.random_base32()
+        self.collection.update_one(
+            {'_id': ObjectId(user_id)},
+            {'$set': {'totp_secret': secret, 'totp_enabled': False, 'updated_at': datetime.utcnow()}}
+        )
+        return secret
+
+    def verify_and_enable_2fa(self, user_id: str, code: str) -> bool:
+        """Verify TOTP code and enable 2FA"""
+        user = self.collection.find_one({'_id': ObjectId(user_id)})
+        if not user or not user.get('totp_secret'):
+            return False
+        totp = pyotp.TOTP(user['totp_secret'])
+        if totp.verify(code, valid_window=1):
+            self.collection.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': {'totp_enabled': True, 'updated_at': datetime.utcnow()}}
+            )
+            return True
+        return False
+
+    def disable_2fa(self, user_id: str) -> bool:
+        """Disable 2FA for user"""
+        self.collection.update_one(
+            {'_id': ObjectId(user_id)},
+            {'$set': {'totp_enabled': False, 'totp_secret': None, 'updated_at': datetime.utcnow()}}
+        )
+        return True
+
+    def verify_2fa_code(self, user: dict, code: str) -> bool:
+        """Verify a TOTP code for login"""
+        if not user.get('totp_secret'):
+            return False
+        totp = pyotp.TOTP(user['totp_secret'])
+        return totp.verify(code, valid_window=1)
+
+    def is_2fa_enabled(self, user: dict) -> bool:
+        """Check if 2FA is enabled for user"""
+        return user.get('totp_enabled', False)
     
     def _serialize(self, user: dict) -> dict:
         """Serialize user for API response (exclude password)"""
@@ -66,5 +109,6 @@ class UserModel:
             'email': user['email'],
             'style': user.get('style', 'Balanced'),
             'goals': user.get('goals', []),
-            'created_at': user.get('created_at', datetime.utcnow()).isoformat()
+            'created_at': user.get('created_at', datetime.utcnow()).isoformat(),
+            'totp_enabled': user.get('totp_enabled', False)
         }
