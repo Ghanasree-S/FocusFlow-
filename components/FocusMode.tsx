@@ -623,6 +623,7 @@ const FocusMode: React.FC = () => {
                 <button
                   onClick={addBlockedApp}
                   disabled={isActive || !newAppName.trim()}
+                  title="Add blocked app"
                   className="px-4 py-2 bg-rose-500 text-white rounded-xl text-sm font-bold disabled:opacity-50 hover:bg-rose-600 transition-all"
                 >
                   <Plus className="w-4 h-4" />
@@ -656,6 +657,7 @@ const FocusMode: React.FC = () => {
                       <button
                         onClick={() => removeBlockedApp(i)}
                         disabled={isActive}
+                        title="Remove app"
                         className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 transition-all disabled:opacity-50"
                       >
                         <X className="w-4 h-4" />

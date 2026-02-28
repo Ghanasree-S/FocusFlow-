@@ -202,8 +202,9 @@ const Profile: React.FC<ProfileProps> = ({ user, onUserUpdate }) => {
           {isEditing ? (
             <div className="flex-1 space-y-4 w-full">
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 block">Name</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 block" htmlFor="profile-name">Name</label>
                 <input
+                  id="profile-name"
                   type="text"
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
@@ -211,8 +212,9 @@ const Profile: React.FC<ProfileProps> = ({ user, onUserUpdate }) => {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 block">Email</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 block" htmlFor="profile-email">Email</label>
                 <input
+                  id="profile-email"
                   type="email"
                   value={user.email}
                   disabled
@@ -243,7 +245,7 @@ const Profile: React.FC<ProfileProps> = ({ user, onUserUpdate }) => {
                   {editGoals.map((goal, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <span className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-lg text-sm text-slate-700 dark:text-slate-300">{goal}</span>
-                      <button onClick={() => removeGoal(i)} className="p-1 text-slate-400 hover:text-rose-500">
+                      <button onClick={() => removeGoal(i)} title="Remove goal" className="p-1 text-slate-400 hover:text-rose-500">
                         <X className="w-4 h-4" />
                       </button>
                     </div>

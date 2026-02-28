@@ -136,6 +136,7 @@ const Infographic: React.FC<InfographicProps> = ({ image, onEdit, isEditing }) =
 
                 <button 
                     onClick={handleCloseFullscreen}
+                    title="Close fullscreen"
                     className="pointer-events-auto p-3 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors shadow-lg"
                 >
                     <X className="w-6 h-6" />

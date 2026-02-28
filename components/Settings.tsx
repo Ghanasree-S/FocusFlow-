@@ -413,6 +413,7 @@ const Settings: React.FC<SettingsProps> = ({ isDarkMode, setIsDarkMode, onLogout
               <select
                 value={dataRetentionDays}
                 onChange={e => setDataRetentionDays(Number(e.target.value))}
+                title="Data retention period"
                 className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-white"
               >
                 <option value={30}>30 days</option>

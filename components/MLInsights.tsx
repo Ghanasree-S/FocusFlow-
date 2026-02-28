@@ -692,6 +692,7 @@ const MLInsights: React.FC = () => {
                             <button
                                 onClick={fetchEvalMetrics}
                                 disabled={metricsLoading}
+                                title="Refresh metrics"
                                 className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                             >
                                 <RefreshCw className={`w-3.5 h-3.5 ${metricsLoading ? 'animate-spin' : ''}`} />

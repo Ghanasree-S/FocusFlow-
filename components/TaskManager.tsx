@@ -121,7 +121,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-300">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-display font-bold text-slate-900 dark:text-white">Add New Task</h3>
-              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl">
+              <button onClick={() => setShowAddModal(false)} title="Close" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -142,6 +142,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Deadline</label>
                 <input
                   type="date"
+                  title="Task deadline"
                   value={newTask.deadline}
                   onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value })}
                   className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
@@ -154,6 +155,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
                   <select
                     value={newTask.category}
                     onChange={(e) => setNewTask({ ...newTask, category: e.target.value })}
+                    title="Task category"
                     className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
                   >
                     <option value="Work">Work</option>
@@ -169,6 +171,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
                   <select
                     value={newTask.priority}
                     onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                    title="Task priority"
                     className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none"
                   >
                     <option value="Low">Low</option>
@@ -287,6 +290,7 @@ const TaskManager: React.FC<TaskManagerProps> = ({ tasks, setTasks }) => {
                     </div>
                     <button
                       onClick={() => handleDeleteTask(task.id)}
+                      title="Delete task"
                       className="p-2 text-slate-400 hover:text-rose-500 transition-colors"
                     >
                       <MoreVertical className="w-5 h-5" />
