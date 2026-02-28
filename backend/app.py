@@ -391,6 +391,12 @@ def create_app():
 
 app = create_app()
 
+# Auto-seed database on startup (both dev and production)
+try:
+    test_mongodb_and_seed()
+except Exception as e:
+    print(f"⚠️  Database seed warning: {e}", flush=True)
+
 if __name__ == '__main__':
     print("", flush=True)
     print("=" * 70, flush=True)
