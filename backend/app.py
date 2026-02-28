@@ -15,7 +15,7 @@ sys.stdout.reconfigure(line_buffering=True)
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import Config
 from routes import auth_bp, tasks_bp, activities_bp, focus_bp, insights_bp, tracker_bp, team_bp, novel_bp
@@ -362,16 +362,31 @@ def create_app():
          allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
     
+    @app.before_request
+    def handle_preflight():
+        """Intercept OPTIONS preflight requests and return 200 immediately"""
+        if request.method == 'OPTIONS':
+            resp = app.make_default_options_response()
+            origin = request.headers.get('Origin', '')
+            allowed = Config.CORS_ORIGINS
+            if origin in allowed or '*' in allowed:
+                resp.headers['Access-Control-Allow-Origin'] = origin
+            else:
+                resp.headers['Access-Control-Allow-Origin'] = origin
+            resp.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+            resp.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
+            resp.headers['Access-Control-Allow-Credentials'] = 'true'
+            resp.headers['Access-Control-Max-Age'] = '3600'
+            return resp
+
     @app.after_request
     def after_request(response):
-        origin = response.headers.get('Access-Control-Allow-Origin')
-        if not origin:
-            request_origin = __import__('flask').request.headers.get('Origin', '')
-            allowed = Config.CORS_ORIGINS
-            if request_origin in allowed or '*' in allowed:
-                response.headers['Access-Control-Allow-Origin'] = request_origin
+        origin = request.headers.get('Origin', '')
+        allowed = Config.CORS_ORIGINS
+        if origin in allowed or '*' in allowed:
+            response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         return response
     
