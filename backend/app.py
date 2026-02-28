@@ -357,10 +357,23 @@ def create_app():
     
     # Configure CORS properly with all necessary options
     CORS(app, 
-         origins=Config.CORS_ORIGINS, 
+         resources={r"/api/*": {"origins": Config.CORS_ORIGINS}},
          supports_credentials=True,
          allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+    
+    @app.after_request
+    def after_request(response):
+        origin = response.headers.get('Access-Control-Allow-Origin')
+        if not origin:
+            request_origin = __import__('flask').request.headers.get('Origin', '')
+            allowed = Config.CORS_ORIGINS
+            if request_origin in allowed or '*' in allowed:
+                response.headers['Access-Control-Allow-Origin'] = request_origin
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(tasks_bp)
