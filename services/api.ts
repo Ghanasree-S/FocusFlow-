@@ -4,7 +4,9 @@
  */
 
 // @ts-ignore
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const _rawUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Strip any trailing path segments beyond /api (safety guard against misconfigured env vars)
+const API_BASE_URL = _rawUrl.replace(/\/api\/.*$/, '/api').replace(/\/+$/, '');
 
 // Token management - uses sessionStorage so token clears when browser closes
 let authToken: string | null = sessionStorage.getItem('ChronosAI_token');
