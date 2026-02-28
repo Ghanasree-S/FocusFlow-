@@ -3,7 +3,8 @@
  * Handles all backend API calls with JWT authentication
  */
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
+// @ts-ignore
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Token management - uses sessionStorage so token clears when browser closes
 let authToken: string | null = sessionStorage.getItem('ChronosAI_token');
