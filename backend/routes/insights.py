@@ -8,23 +8,28 @@ from models.task import TaskModel
 from models.activity import ActivityModel
 from models.focus_session import FocusSessionModel
 
-# Lazy load ML modules to avoid startup crash on import errors
-ProductivityClassifier = None
-TimeSeriesForecaster = None
+# ─── ML helper: cached singletons from ml package ────────────────────────────
+def _get_forecaster():
+    """Return cached TimeSeriesForecaster (loads models only on first call)."""
+    try:
+        from ml import get_time_series_forecaster
+        return get_time_series_forecaster()
+    except Exception as e:
+        print(f"⚠️ ML forecaster unavailable: {e}")
+        return None
+
+def _get_classifier():
+    """Return cached ProductivityClassifier (loads only on first call)."""
+    try:
+        from ml import get_productivity_classifier
+        return get_productivity_classifier()
+    except Exception as e:
+        print(f"⚠️ ML classifier unavailable: {e}")
+        return None
 
 def _load_ml_modules():
-    """Lazy load ML modules to avoid import errors at startup"""
-    global ProductivityClassifier, TimeSeriesForecaster
-    if ProductivityClassifier is None:
-        try:
-            from ml.productivity_classifier import ProductivityClassifier as PC
-            from ml.time_series_forecaster import TimeSeriesForecaster as TSF
-            ProductivityClassifier = PC
-            TimeSeriesForecaster = TSF
-        except Exception as e:
-            print(f"âš ï¸ ML modules could not be loaded: {e}")
-            return False
-    return True
+    """Check whether ML modules are available (backward compat helper)."""
+    return _get_forecaster() is not None
 
 from datetime import datetime, timedelta
 import random
@@ -237,10 +242,10 @@ def get_forecast():
         focus_stats = focus_model.get_focus_stats(user_id)
         
         # Run ML predictions - lazy load modules
-        if not _load_ml_modules():
+        forecaster = _get_forecaster()
+        classifier = _get_classifier()
+        if not forecaster or not classifier:
             raise Exception('ML modules not available')
-        classifier = ProductivityClassifier()
-        forecaster = TimeSeriesForecaster()
         
         # Classify current productivity level
         productivity_level = classifier.predict(weekly_trends, task_stats, focus_stats)
@@ -492,8 +497,8 @@ def get_ml_status():
                 }
             })
         
-        forecaster = TimeSeriesForecaster()
-        classifier = ProductivityClassifier()
+        forecaster = _get_forecaster()
+        classifier = _get_classifier()
         
         return jsonify({
             'forecaster': forecaster.get_model_status(),
@@ -559,7 +564,7 @@ def train_ml_models():
                 }
             })
         
-        forecaster = TimeSeriesForecaster()
+        forecaster = _get_forecaster()
         training_results = forecaster.train_all(df)
         
         return jsonify({
@@ -623,7 +628,7 @@ def compare_ml_models():
                 'message': 'Using statistical fallback predictions (ML modules unavailable)'
             })
         
-        forecaster = TimeSeriesForecaster()
+        forecaster = _get_forecaster()
         
         lstm_pred = forecaster.predict_with_lstm(weekly_trends, periods=7)
         arima_pred = forecaster.predict_with_arima(weekly_trends, periods=7)
@@ -724,7 +729,7 @@ def get_evaluation_metrics():
         metrics = {}
         
         if _load_ml_modules():
-            forecaster = TimeSeriesForecaster()
+            forecaster = _get_forecaster()
             
             try:
                 lstm_pred = forecaster.predict_with_lstm(train_data, periods=test_periods)
@@ -829,7 +834,7 @@ def get_model_forecast(model):
                 'status': 'fallback'
             })
         
-        forecaster = TimeSeriesForecaster()
+        forecaster = _get_forecaster()
         
         if model.lower() == 'lstm':
             result = forecaster.predict_with_lstm(weekly_trends, periods)
@@ -1029,7 +1034,9 @@ def get_realtime_predictions():
                 
                 df = pd.DataFrame(training_data)
                 if _load_ml_modules():
-                    forecaster = TimeSeriesForecaster()
+                    from ml import get_time_series_forecaster, reload_models
+                    reload_models()  # force fresh load after training
+                    forecaster = get_time_series_forecaster()
                     forecaster.train_all(df)
                 print(f"âœ… Auto-trained models at {activity_count} activities")
             except Exception as e:
@@ -1071,7 +1078,7 @@ def get_realtime_predictions():
                 }
             }), 200
         
-        forecaster = TimeSeriesForecaster()
+        forecaster = _get_forecaster()
         
         lstm_pred = None
         arima_pred = None

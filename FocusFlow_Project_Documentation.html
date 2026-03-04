@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -527,9 +527,9 @@
 <body>
     <div class="container">
         <header>
-            <h1>ðŸŽ¯ ChronosAI</h1>
-            <p class="tagline">AI-Powered Productivity Tracking & Prediction System</p>
-            <div class="subtitle">ðŸ“š Complete Project Documentation for Presentation</div>
+            <h1>🎯 ChronosAI</h1>
+            <p class="tagline">Time Series Forecasting for Productivity Prediction</p>
+            <div class="subtitle">📚 Time Series Analysis - Project Documentation (2025)</div>
         </header>
 
         <nav class="nav-sticky">
@@ -537,120 +537,132 @@
             <a href="#problem">Problem</a>
             <a href="#methodology">Methodology</a>
             <a href="#architecture">Architecture</a>
-            <a href="#models">ML Models</a>
-            <a href="#features">Features</a>
-            <a href="#tech">Tech Stack</a>
+            <a href="#models">Time Series Models</a>
+            <a href="#var">VAR & Granger</a>
+            <a href="#ensemble">Adaptive Ensemble</a>
             <a href="#results">Results</a>
             <a href="#findings">Findings</a>
+            <a href="#features">App Features</a>
+            <a href="#tech">Tech Stack</a>
         </nav>
 
         <!-- SECTION 1: Project Objective -->
         <section class="section" id="objective">
-            <h2>ðŸŽ¯ Project Objective</h2>
+            <h2>🎯 Project Objective</h2>
 
             <div class="highlight">
-                <p><strong>Primary Goal:</strong> Build an intelligent productivity tracking application that
-                    automatically monitors computer usage, classifies activities, and uses Machine Learning to predict
-                    future productivity patterns.</p>
+                <p><strong>Primary Goal:</strong> Apply and compare multiple <strong>time series forecasting
+                        techniques</strong> — LSTM (deep learning), ARIMA (statistical), Prophet (additive), and VAR
+                    (multivariate) — to predict daily productivity patterns from automatically tracked computer usage
+                    data.</p>
             </div>
 
             <h3>Specific Objectives</h3>
             <ol>
-                <li><strong>Automatic Activity Tracking:</strong> Build a background tracker that monitors active
-                    windows every 10 seconds without manual input</li>
-                <li><strong>Smart Classification:</strong> Automatically categorize apps as productive (VS Code, Excel)
-                    or distracting (YouTube, Instagram)</li>
-                <li><strong>Time Series Forecasting:</strong> Implement three ML models (LSTM, ARIMA, Prophet) to
-                    predict 7-day productivity</li>
-                <li><strong>Ensemble Learning:</strong> Combine multiple models using weighted averaging for improved
-                    accuracy</li>
-                <li><strong>Real-time Dashboard:</strong> Display tracked data, analytics, and ML predictions in a
-                    beautiful UI</li>
-                <li><strong>Actionable Insights:</strong> Provide best focus windows, distraction triggers, and
-                    behavioral patterns</li>
+                <li><strong>Time Series Data Collection:</strong> Build an automatic activity tracker that monitors
+                    active windows every 10 seconds, producing a continuous daily time series of productive minutes</li>
+                <li><strong>Univariate Forecasting:</strong> Implement and compare three time series models (LSTM,
+                    ARIMA, Prophet) for 7-day ahead productivity prediction</li>
+                <li><strong>Multivariate Analysis (VAR):</strong> Use Vector AutoRegression to model the bidirectional
+                    relationship between mood and productivity time series, testing Granger causality</li>
+                <li><strong>Adaptive Ensemble:</strong> Dynamically combine LSTM, ARIMA, and Prophet predictions
+                    using inverse-error weighted averaging that adapts per user over time</li>
+                <li><strong>Model Evaluation:</strong> Compare all models using MAE, RMSE, and MAPE metrics with
+                    proper train/test splits</li>
+                <li><strong>Stationarity Testing:</strong> Apply Augmented Dickey-Fuller (ADF) test and differencing
+                    to ensure data suitability for ARIMA modeling</li>
+                <li><strong>Visualization & Dashboard:</strong> Present forecasting results, model comparisons, and
+                    insights in an interactive web application</li>
             </ol>
 
             <h3>Why This Project?</h3>
             <ul>
-                <li>Demonstrates <strong>end-to-end ML pipeline</strong> from data collection to prediction</li>
-                <li>Practical application of <strong>time series forecasting</strong> techniques</li>
-                <li>Integration of <strong>deep learning (LSTM)</strong> with statistical models (ARIMA, Prophet)</li>
-                <li>Full-stack development with <strong>React + Flask + MongoDB</strong></li>
+                <li>Demonstrates <strong>end-to-end time series pipeline</strong> from raw data collection to
+                    multi-step forecasting</li>
+                <li>Practical comparison of <strong>3 fundamentally different forecasting approaches</strong>:
+                    deep learning (LSTM), classical statistical (ARIMA), and decomposition-based (Prophet)</li>
+                <li>Explores <strong>multivariate time series</strong> via VAR and Granger causality testing</li>
+                <li>Shows how <strong>adaptive ensemble methods</strong> can outperform individual models by adjusting
+                    weights based on historical prediction errors</li>
+                <li>Real-world time series data with <strong>weekly seasonality, trends, and noise</strong> that
+                    challenges each model differently</li>
+                <li>Full-stack implementation with <strong>React + Flask + MongoDB</strong> for real-time forecasting
+                    application</li>
             </ul>
         </section>
 
         <!-- SECTION 2: Problem Statement -->
         <section class="section" id="problem">
-            <h2>â“ Problem Statement</h2>
+            <h2>⚠️ Problem Statement</h2>
 
-            <h3>The Digital Distraction Crisis</h3>
-            <p>In today's digital world, knowledge workers face constant distractions that significantly impact
-                productivity. Studies show alarming statistics:</p>
+            <h3>The Forecasting Challenge</h3>
+            <p>Predicting human productivity is a challenging time series problem due to multiple factors:</p>
 
             <div class="metrics-grid">
                 <div class="metric-box">
-                    <div class="metric-value">11 min</div>
-                    <div class="metric-label">Avg time before distraction</div>
+                    <div class="metric-value">Non-Stationary</div>
+                    <div class="metric-label">Productivity trends shift over time</div>
                 </div>
                 <div class="metric-box">
-                    <div class="metric-value">25 min</div>
-                    <div class="metric-label">Time to refocus</div>
+                    <div class="metric-value">Seasonal</div>
+                    <div class="metric-label">Weekly patterns (weekday vs weekend)</div>
                 </div>
                 <div class="metric-box">
-                    <div class="metric-value">2.5 hrs</div>
-                    <div class="metric-label">Daily time lost</div>
+                    <div class="metric-value">Noisy</div>
+                    <div class="metric-label">High variance in daily output</div>
                 </div>
                 <div class="metric-box">
-                    <div class="metric-value">67%</div>
-                    <div class="metric-label">Workers struggle with focus</div>
+                    <div class="metric-value">Individual</div>
+                    <div class="metric-label">Each user has unique patterns</div>
                 </div>
             </div>
 
-            <h3>Problems with Existing Solutions</h3>
+            <h3>Why Multiple Time Series Models?</h3>
             <table>
                 <tr>
-                    <th>Issue</th>
-                    <th>Traditional Tools</th>
-                    <th>ChronosAI Solution âœ¨</th>
+                    <th>Challenge</th>
+                    <th>Single Model Limitation</th>
+                    <th>Our Multi-Model Approach</th>
                 </tr>
                 <tr>
-                    <td>Tracking Method</td>
-                    <td>âŒ Manual time entry (tedious)</td>
-                    <td>âœ… Automatic background tracking</td>
+                    <td>Weekly Seasonality</td>
+                    <td>ARIMA doesn't decompose seasonality explicitly</td>
+                    <td>Prophet captures additive weekly seasonality</td>
                 </tr>
                 <tr>
-                    <td>Analysis Type</td>
-                    <td>âŒ Basic statistics only</td>
-                    <td>âœ… ML-powered predictions</td>
+                    <td>Non-linear Patterns</td>
+                    <td>ARIMA assumes linearity</td>
+                    <td>LSTM learns non-linear temporal relationships</td>
                 </tr>
                 <tr>
-                    <td>Future Planning</td>
-                    <td>âŒ No forecasting capability</td>
-                    <td>âœ… 7-day productivity forecasts</td>
+                    <td>Short Data (91 days)</td>
+                    <td>LSTM needs large datasets</td>
+                    <td>ARIMA works well with limited data (AR(1))</td>
                 </tr>
                 <tr>
-                    <td>AI/ML Integration</td>
-                    <td>âŒ None</td>
-                    <td>âœ… LSTM + ARIMA + Prophet ensemble</td>
+                    <td>User Variability</td>
+                    <td>Fixed weights don't adapt</td>
+                    <td>Adaptive ensemble adjusts per user</td>
                 </tr>
                 <tr>
-                    <td>Personalization</td>
-                    <td>âŒ Generic advice</td>
-                    <td>âœ… Pattern-based recommendations</td>
+                    <td>Mood-Productivity Link</td>
+                    <td>Univariate models miss cross-dependencies</td>
+                    <td>VAR models bidirectional temporal relationships</td>
                 </tr>
             </table>
         </section>
 
         <!-- SECTION 3: Methodology -->
         <section class="section" id="methodology">
-            <h2>ðŸ“‹ Methodology</h2>
+            <h2>📋 Methodology</h2>
 
             <h3>Overall Approach</h3>
             <p>We follow a systematic data science methodology with these phases:</p>
 
             <div class="highlight">
-                <strong>Data Collection â†’ Preprocessing â†’ Feature Engineering â†’ Model Training â†’ Evaluation â†’ Deployment
-                    â†’ Visualization</strong>
+                <strong>Data Collection → Preprocessing → Feature Engineering → Model Training → Evaluation →
+                    Deployment
+                    → Visualization</strong>
             </div>
 
             <h3>Step 1: Data Collection (Activity Tracking)</h3>
@@ -704,32 +716,32 @@ features = {
             <h3>Step 5: Model Training Pipeline</h3>
             <div class="flow-diagram">
                 Historical Data (91 days)
-                â”‚
-                â–¼
-                â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                â”‚ DATA PREPROCESSING â”‚
-                â”‚ â€¢ Parse dates and aggregate daily totals â”‚
-                â”‚ â€¢ Create time series DataFrame (ds, y) â”‚
-                â”‚ â€¢ Split: 80% train (72 days), 20% test (19 days)â”‚
-                â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                â”‚
-                â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                â–¼ â–¼ â–¼
-                â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                â”‚ LSTM â”‚ â”‚ ARIMA â”‚ â”‚ Prophet â”‚
-                â”‚ (40%) â”‚ â”‚ (30%) â”‚ â”‚ (30%) â”‚
-                â”‚ Neural â”‚ â”‚ Stats â”‚ â”‚ Additiveâ”‚
-                â”‚ Network â”‚ â”‚ Model â”‚ â”‚ Model â”‚
-                â””â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”˜
-                â”‚ â”‚ â”‚
-                â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                â–¼
-                â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                â”‚ ENSEMBLE FORECAST â”‚
-                â”‚ Weighted Average â”‚
-                â”‚ 0.4Ã—LSTM + 0.3Ã—ARIMAâ”‚
-                â”‚ + 0.3Ã—Prophet â”‚
-                â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                |
+                v
+                +--------------------------------------------------+
+                | DATA PREPROCESSING |
+                | * Parse dates and aggregate daily totals |
+                | * Create time series DataFrame (ds, y) |
+                | * Split: 80% train (72 days), 20% test (19 days) |
+                +---------------------+----------------------------+
+                |
+                +---------------+---------------+
+                v v v
+                +-----------+ +-----------+ +-----------+
+                | LSTM | | ARIMA | | Prophet |
+                | (40%) | | (30%) | | (30%) |
+                | Neural | | Stats | | Additive |
+                | Network | | Model | | Model |
+                +-----+-----+ +-----+-----+ +-----+-----+
+                | | |
+                +-------------+-------------+
+                v
+                +---------------------+
+                | ENSEMBLE FORECAST |
+                | Weighted Average |
+                | 0.4*LSTM + 0.3* |
+                | ARIMA+0.3*Prophet |
+                +---------------------+
             </div>
 
             <h3>Step 6: Evaluation Metrics</h3>
@@ -742,10 +754,10 @@ features = {
 
         <!-- SECTION 4: System Architecture -->
         <section class="section" id="architecture">
-            <h2>ðŸ—ï¸ System Architecture</h2>
+            <h2>🔍— System Architecture</h2>
 
             <div class="architecture-diagram">
-                <div class="arch-section-title">â”€â”€ FRONTEND (React + TypeScript) â”€â”€</div>
+                <div class="arch-section-title">-- FRONTEND (React 18 + TypeScript + Vite) --</div>
                 <div class="arch-row">
                     <div class="arch-box frontend">
                         Dashboard
@@ -764,12 +776,48 @@ features = {
                         <div class="arch-label">CRUD tasks</div>
                     </div>
                 </div>
-
                 <div class="arch-row">
-                    <span class="arch-arrow">â–¼ HTTP/REST API â–¼</span>
+                    <div class="arch-box frontend">
+                        Focus Mode
+                        <div class="arch-label">Pomodoro timer</div>
+                    </div>
+                    <div class="arch-box frontend">
+                        AI Coach
+                        <div class="arch-label">Gemini chatbot</div>
+                    </div>
+                    <div class="arch-box frontend">
+                        Wellness
+                        <div class="arch-label">Mood tracking</div>
+                    </div>
+                    <div class="arch-box frontend">
+                        Team
+                        <div class="arch-label">Collaboration</div>
+                    </div>
+                </div>
+                <div class="arch-row">
+                    <div class="arch-box frontend">
+                        Reports
+                        <div class="arch-label">CSV export</div>
+                    </div>
+                    <div class="arch-box frontend">
+                        Novel Research
+                        <div class="arch-label">6 contributions</div>
+                    </div>
+                    <div class="arch-box frontend">
+                        Profile
+                        <div class="arch-label">Achievements</div>
+                    </div>
+                    <div class="arch-box frontend">
+                        Settings
+                        <div class="arch-label">Dark/Light mode</div>
+                    </div>
                 </div>
 
-                <div class="arch-section-title">â”€â”€ BACKEND (Flask + Python) â”€â”€</div>
+                <div class="arch-row">
+                    <span class="arch-arrow">v HTTP/REST API v</span>
+                </div>
+
+                <div class="arch-section-title">-- BACKEND (Flask + Python) --</div>
                 <div class="arch-row">
                     <div class="arch-box backend">
                         Auth Routes
@@ -788,13 +836,31 @@ features = {
                         <div class="arch-label">CRUD ops</div>
                     </div>
                 </div>
-
                 <div class="arch-row">
-                    <span class="arch-arrow">â–¼</span>
-                    <span class="arch-arrow" style="margin-left: 200px;">â–¼</span>
+                    <div class="arch-box backend">
+                        Focus Routes
+                        <div class="arch-label">Session mgmt</div>
+                    </div>
+                    <div class="arch-box backend">
+                        Novel Routes
+                        <div class="arch-label">6 research APIs</div>
+                    </div>
+                    <div class="arch-box backend">
+                        Team Routes
+                        <div class="arch-label">Invite & stats</div>
+                    </div>
+                    <div class="arch-box backend">
+                        Tracker Routes
+                        <div class="arch-label">Start/Stop</div>
+                    </div>
                 </div>
 
-                <div class="arch-section-title">â”€â”€ ML LAYER â”€â”€</div>
+                <div class="arch-row">
+                    <span class="arch-arrow">v</span>
+                    <span class="arch-arrow" style="margin-left: 200px;">v</span>
+                </div>
+
+                <div class="arch-section-title">-- ML LAYER --</div>
                 <div class="arch-row">
                     <div class="arch-box ml">
                         LSTM
@@ -809,43 +875,81 @@ features = {
                         <div class="arch-label">Meta/Facebook</div>
                     </div>
                     <div class="arch-box ml">
-                        Ensemble
-                        <div class="arch-label">Weighted avg</div>
+                        Adaptive Ensemble
+                        <div class="arch-label">Dynamic weights</div>
+                    </div>
+                </div>
+
+                <div class="arch-section-title">-- NOVEL ML MODULES --</div>
+                <div class="arch-row">
+                    <div class="arch-box ml">
+                        SHAP Explainer
+                        <div class="arch-label">Explainable AI</div>
+                    </div>
+                    <div class="arch-box ml">
+                        Fatigue Index
+                        <div class="arch-label">Burnout detection</div>
+                    </div>
+                    <div class="arch-box ml">
+                        Context Switch
+                        <div class="arch-label">Attention residue</div>
+                    </div>
+                </div>
+                <div class="arch-row">
+                    <div class="arch-box ml">
+                        Procrastination
+                        <div class="arch-label">Sequence mining</div>
+                    </div>
+                    <div class="arch-box ml">
+                        Mood-Prod VAR
+                        <div class="arch-label">Granger causality</div>
+                    </div>
+                    <div class="arch-box ml">
+                        Classifier
+                        <div class="arch-label">Random Forest</div>
                     </div>
                 </div>
 
                 <div class="arch-row">
-                    <span class="arch-arrow">â—€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–¶</span>
+                    <span class="arch-arrow"><--------------></span>
                 </div>
 
-                <div class="arch-section-title">â”€â”€ DATA LAYER â”€â”€</div>
+                <div class="arch-section-title">-- DATA & AI LAYER --</div>
                 <div class="arch-row">
                     <div class="arch-box db">
                         MongoDB
-                        <div class="arch-label">Activities, Users, Tasks</div>
+                        <div class="arch-label">Activities, Users, Tasks, Teams, Mood</div>
                     </div>
                     <div class="arch-box tracker">
                         Desktop Tracker
                         <div class="arch-label">pygetwindow</div>
+                    </div>
+                    <div class="arch-box" style="border-color: #f472b6; background: rgba(236, 72, 153, 0.2);">
+                        Google Gemini
+                        <div class="arch-label">AI Coach API</div>
                     </div>
                 </div>
             </div>
 
             <h3>Data Flow</h3>
             <ol>
-                <li><strong>Tracker</strong> â†’ Monitors active window every 10 seconds</li>
-                <li><strong>API</strong> â†’ Receives activity logs and stores in MongoDB</li>
-                <li><strong>ML Pipeline</strong> â†’ Processes data, trains models, generates predictions</li>
-                <li><strong>Frontend</strong> â†’ Fetches and visualizes data in real-time</li>
+                <li><strong>Tracker</strong> → Monitors active window every 10 seconds</li>
+                <li><strong>API</strong> → Receives activity logs and stores in MongoDB</li>
+                <li><strong>ML Pipeline</strong> → Processes data, trains models, generates predictions</li>
+                <li><strong>Frontend</strong> → Fetches and visualizes data in real-time</li>
             </ol>
         </section>
 
-        <!-- SECTION 5: ML Models -->
+        <!-- SECTION 5: Time Series Models -->
         <section class="section" id="models">
-            <h2>ðŸ§  Machine Learning Models</h2>
+            <h2>📈 Time Series Forecasting Models</h2>
 
-            <p>We use <strong>three different models</strong> because each captures different patterns. Combining them
-                (ensemble) gives better accuracy than any single model!</p>
+            <div class="highlight">
+                <p>We implement and compare <strong>three fundamentally different time series forecasting
+                        approaches</strong>.
+                    Each captures different temporal patterns in the productivity data. Their predictions are combined
+                    via an adaptive weighted ensemble for superior forecasting accuracy.</p>
+            </div>
 
             <div class="model-card">
                 <h4>1. LSTM (Long Short-Term Memory)</h4>
@@ -896,11 +1000,11 @@ features = {
 
                 <h4 style="color: var(--accent);">The Formula</h4>
                 <div class="code-block">
-                    <code>Today's Productivity = c + (Ï† Ã— Yesterday's Productivity) + Îµ
+                    <code>Today's Productivity = c + (φ × Yesterday's Productivity) + ε
 
 <span class="code-comment"># Example calculation:</span>
-<span class="code-comment"># If yesterday = 200 min, coefficient Ï† = 0.8, constant c = 30</span>
-<span class="code-comment"># Today â‰ˆ 30 + (0.8 Ã— 200) = 190 minutes</span></code>
+<span class="code-comment"># If yesterday = 200 min, coefficient φ = 0.8, constant c = 30</span>
+<span class="code-comment"># Today ≈ 30 + (0.8 × 200) = 190 minutes</span></code>
                 </div>
 
                 <h4 style="color: var(--accent);">Why ARIMA for this project?</h4>
@@ -923,13 +1027,13 @@ features = {
 
                 <h4 style="color: var(--accent);">The Formula</h4>
                 <div class="code-block">
-                    <code>y(t) = g(t) + s(t) + h(t) + Îµ(t)
+                    <code>y(t) = g(t) + s(t) + h(t) + ε(t)
 
 Where:
   g(t) = Trend (overall growth/decline)
   s(t) = Seasonality (weekly, monthly patterns)
   h(t) = Holiday effects
-  Îµ(t) = Error term
+  ε(t) = Error term
 
 <span class="code-comment"># Example for a Friday:</span>
 <span class="code-comment"># Base trend: 200 min</span>
@@ -953,14 +1057,14 @@ Where:
 
             <div class="code-block">
                 <code><span class="code-comment"># Ensemble prediction formula</span>
-final_prediction = (<span class="code-number">0.4</span> Ã— LSTM) + (<span class="code-number">0.3</span> Ã— ARIMA) + (<span class="code-number">0.3</span> Ã— Prophet)
+final_prediction = (<span class="code-number">0.4</span> × LSTM) + (<span class="code-number">0.3</span> × ARIMA) + (<span class="code-number">0.3</span> × Prophet)
 
 <span class="code-comment"># Example:</span>
 LSTM_pred   = <span class="code-number">180</span> min
 ARIMA_pred  = <span class="code-number">200</span> min
 Prophet_pred = <span class="code-number">170</span> min
 
-ensemble = (<span class="code-number">0.4</span> Ã— <span class="code-number">180</span>) + (<span class="code-number">0.3</span> Ã— <span class="code-number">200</span>) + (<span class="code-number">0.3</span> Ã— <span class="code-number">170</span>)
+ensemble = (<span class="code-number">0.4</span> × <span class="code-number">180</span>) + (<span class="code-number">0.3</span> × <span class="code-number">200</span>) + (<span class="code-number">0.3</span> × <span class="code-number">170</span>)
          = <span class="code-number">72</span> + <span class="code-number">60</span> + <span class="code-number">51</span>
          = <span class="code-number">183</span> min  <span class="code-comment"># Final prediction</span></code>
             </div>
@@ -993,72 +1097,246 @@ ensemble = (<span class="code-number">0.4</span> Ã— <span class="code-number"
             </table>
         </section>
 
-        <!-- SECTION 6: Features Implemented -->
-        <section class="section" id="features">
-            <h2>âœ¨ Features Implemented</h2>
+        <!-- SECTION 5b: VAR & Granger (Multivariate Time Series) -->
+        <section class="section" id="var">
+            <h2>📊 VAR Model & Granger Causality Analysis</h2>
 
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">ðŸ”„</div>
-                    <h4>Automatic Activity Tracking</h4>
-                    <p>Background Python process monitors active windows every 10 seconds using pygetwindow. No manual
-                        entry required!</p>
+            <div class="highlight">
+                <p><strong>Vector AutoRegression (VAR)</strong> extends univariate time series to the multivariate
+                    case. We use it to model the <strong>bidirectional temporal relationship</strong> between mood
+                    and productivity -- answering: <em>Does mood drive productivity, or does productivity drive
+                        mood?</em></p>
+            </div>
+
+            <div class="model-card">
+                <h4>4. VAR (Vector AutoRegression)</h4>
+                <span class="badge badge-purple">Multivariate</span>
+                <span class="badge badge-orange">Granger Causality</span>
+                <span class="badge badge-cyan">Impulse Response</span>
+                <span class="badge badge-green">Bidirectional</span>
+
+                <h4 style="margin-top: 20px; color: var(--accent);">What is VAR?</h4>
+                <p>VAR is a multivariate time series model where each variable is modeled as a linear function
+                    of its own past values AND the past values of other variables. Unlike ARIMA (univariate),
+                    VAR captures <strong>cross-variable dependencies</strong>.</p>
+
+                <h4 style="color: var(--accent);">The VAR(p) Formula</h4>
+                <div class="code-block">
+                    <code><span class="code-comment"># VAR(p) model for 2 variables (mood & productivity):</span>
+
+Y(t) = c + A1*Y(t-1) + A2*Y(t-2) + ... + Ap*Y(t-p) + e(t)
+
+<span class="code-keyword">Where:</span>
+  Y(t) = [mood(t), productivity(t)]  <span class="code-comment"># 2-dimensional vector</span>
+  c    = intercept vector
+  Ai   = 2x2 coefficient matrices    <span class="code-comment"># capture cross-dependencies</span>
+  p    = lag order (selected by AIC)
+  e(t) = error vector
+
+<span class="code-comment"># Expanded for mood:</span>
+mood(t) = c1 + a11*mood(t-1) + <span class="code-number">a12</span>*productivity(t-1) + e1(t)
+<span class="code-comment">#                                  ^^ This coefficient shows how past</span>
+<span class="code-comment">#                                     productivity affects today's mood</span></code>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">ðŸŽ¯</div>
-                    <h4>Smart App Classification</h4>
-                    <p>Automatically categorizes apps as productive (VS Code, Notion), distracting (YouTube, Instagram),
-                        or neutral using keyword matching.</p>
-                </div>
+                <h4 style="color: var(--accent);">Granger Causality Test</h4>
+                <p>We test causality in both directions using the Granger framework:</p>
+                <ul>
+                    <li><strong>H0:</strong> Past values of X do NOT help predict Y (no Granger causality)</li>
+                    <li><strong>H1:</strong> Past values of X DO help predict Y (Granger causality exists)</li>
+                    <li>If p-value &lt; 0.05 for mood -> productivity: mood Granger-causes productivity</li>
+                    <li>If p-value &lt; 0.05 for productivity -> mood: productivity Granger-causes mood</li>
+                    <li>Both can be true simultaneously (bidirectional causality)</li>
+                </ul>
 
-                <div class="feature-card">
-                    <div class="feature-icon">ðŸ“Š</div>
-                    <h4>Real-time Dashboard</h4>
-                    <p>Live productivity score, hourly breakdown charts, task statistics, and focus session metrics -
-                        all from actual tracked data.</p>
-                </div>
+                <h4 style="color: var(--accent);">Analysis Pipeline</h4>
+                <ol>
+                    <li><strong>Data Alignment:</strong> Match daily mood entries with daily productivity metrics on
+                        matching dates</li>
+                    <li><strong>Stationarity Check:</strong> ADF test on both series; apply differencing if
+                        non-stationary</li>
+                    <li><strong>Lag Selection:</strong> Use AIC/BIC to determine optimal lag order p</li>
+                    <li><strong>Pearson Correlation:</strong> Overall linear correlation between mood and productivity
+                    </li>
+                    <li><strong>Cross-Correlation:</strong> Lagged correlations to determine which variable leads</li>
+                    <li><strong>Granger Causality F-tests:</strong> Statistical tests in both directions with p-values
+                    </li>
+                    <li><strong>VAR Forecasting:</strong> Joint 3-day forecasts of both mood and productivity</li>
+                    <li><strong>Impulse Response Functions (IRF):</strong> How a one-unit "shock" to mood propagates to
+                        productivity over time</li>
+                </ol>
 
-                <div class="feature-card">
-                    <div class="feature-icon">ðŸ§ </div>
-                    <h4>7-Day ML Forecasting</h4>
-                    <p>LSTM, ARIMA, and Prophet models predict your productivity for the next week with confidence
-                        intervals.</p>
-                </div>
+                <h4 style="color: var(--accent);">Implementation (statsmodels)</h4>
+                <div class="code-block">
+                    <code><span class="code-keyword">from</span> statsmodels.tsa.api <span class="code-keyword">import</span> VAR
+<span class="code-keyword">from</span> statsmodels.tsa.stattools <span class="code-keyword">import</span> grangercausalitytests, adfuller
 
-                <div class="feature-card">
-                    <div class="feature-icon">ðŸ“ˆ</div>
-                    <h4>Trend Analysis</h4>
-                    <p>Weekly trends, hourly breakdowns, and productivity patterns visualized with interactive charts.
-                    </p>
-                </div>
+<span class="code-comment"># Step 1: Stationarity check</span>
+adf_mood = adfuller(data[<span class="code-string">'mood'</span>])
+adf_prod = adfuller(data[<span class="code-string">'productivity'</span>])
 
-                <div class="feature-card">
-                    <div class="feature-icon">ðŸ””</div>
-                    <h4>Focus Windows Detection</h4>
-                    <p>Identifies your peak productivity hours based on historical data so you can schedule important
-                        tasks accordingly.</p>
-                </div>
+<span class="code-comment"># Step 2: Fit VAR model (lag order selected by AIC)</span>
+model = VAR(data[[<span class="code-string">'mood'</span>, <span class="code-string">'productivity'</span>]])
+fitted = model.fit(maxlags=<span class="code-number">3</span>, ic=<span class="code-string">'aic'</span>)
 
-                <div class="feature-card">
-                    <div class="feature-icon">âš¡</div>
-                    <h4>Auto-retraining</h4>
-                    <p>ML models automatically retrain every 20 new activities to stay current with your changing
-                        patterns.</p>
-                </div>
+<span class="code-comment"># Step 3: Granger causality test</span>
+granger = grangercausalitytests(
+    data[[<span class="code-string">'productivity'</span>, <span class="code-string">'mood'</span>]], maxlag=<span class="code-number">3</span>
+)
 
-                <div class="feature-card">
-                    <div class="feature-icon">ðŸ“±</div>
-                    <h4>Modern React UI</h4>
-                    <p>Beautiful dark-mode dashboard with smooth animations, responsive design, and intuitive
-                        navigation.</p>
+<span class="code-comment"># Step 4: Impulse Response Function (5-step ahead)</span>
+irf = fitted.irf(periods=<span class="code-number">5</span>)
+
+<span class="code-comment"># Step 5: Forecast next 3 days</span>
+forecast = fitted.forecast(data.values[-fitted.k_ar:], steps=<span class="code-number">3</span>)</code>
                 </div>
             </div>
         </section>
 
-        <!-- SECTION 7: Technology Stack -->
+        <!-- SECTION 5c: Adaptive Ensemble -->
+        <section class="section" id="ensemble">
+            <h2>🔄 Adaptive Ensemble Weight Optimization</h2>
+
+            <div class="highlight">
+                <p>Instead of using fixed weights (0.4 LSTM + 0.3 ARIMA + 0.3 Prophet), we implement
+                    <strong>dynamically-optimized weights per user</strong> that automatically adjust based on each
+                    model's recent prediction accuracy. The ensemble learns which model works best for
+                    <em>each individual user's</em> time series pattern.
+                </p>
+            </div>
+
+            <div class="model-card">
+                <h4>Adaptive Weighted Ensemble Algorithm</h4>
+                <span class="badge badge-green">Per-User</span>
+                <span class="badge badge-blue">Inverse-Error</span>
+                <span class="badge badge-purple">Exponential Smoothing</span>
+
+                <h4 style="margin-top: 20px; color: var(--accent);">Why Adaptive Weights?</h4>
+                <table>
+                    <tr>
+                        <th>User Pattern</th>
+                        <th>Best Model</th>
+                        <th>Reason</th>
+                    </tr>
+                    <tr>
+                        <td>Highly regular schedule</td>
+                        <td>Prophet (higher weight)</td>
+                        <td>Strong weekly seasonality</td>
+                    </tr>
+                    <tr>
+                        <td>Sudden habit change</td>
+                        <td>LSTM (higher weight)</td>
+                        <td>Better at learning new patterns</td>
+                    </tr>
+                    <tr>
+                        <td>Stable trend, low noise</td>
+                        <td>ARIMA (higher weight)</td>
+                        <td>AR(1) captures persistence</td>
+                    </tr>
+                </table>
+
+                <h4 style="color: var(--accent);">Optimization Formula</h4>
+                <div class="code-block">
+                    <code><span class="code-comment"># Step 1: Compute absolute errors for each model</span>
+errors = {
+    <span class="code-string">'lstm'</span>:    |actual - lstm_predicted|,
+    <span class="code-string">'arima'</span>:   |actual - arima_predicted|,
+    <span class="code-string">'prophet'</span>: |actual - prophet_predicted|
+}
+
+<span class="code-comment"># Step 2: Inverse-error weighting (lower error = higher weight)</span>
+epsilon = <span class="code-number">1e-6</span>
+inv_errors = {m: <span class="code-number">1</span>/(e + epsilon) <span class="code-keyword">for</span> m, e <span class="code-keyword">in</span> errors.items()}
+total = sum(inv_errors.values())
+w_computed = {m: ie/total <span class="code-keyword">for</span> m, ie <span class="code-keyword">in</span> inv_errors.items()}
+
+<span class="code-comment"># Step 3: Exponential smoothing (alpha=0.3)</span>
+w_new = alpha * w_computed + (<span class="code-number">1</span> - alpha) * w_old
+
+<span class="code-comment"># Example after a week of strong seasonality:</span>
+<span class="code-comment"># LSTM: 0.25  ARIMA: 0.28  Prophet: 0.47</span></code>
+                </div>
+
+                <h4 style="color: var(--accent);">Algorithm Properties</h4>
+                <ul>
+                    <li><strong>Initial weights:</strong> Equal (0.33, 0.33, 0.33) for new users</li>
+                    <li><strong>Smoothing factor alpha = 0.3:</strong> Balances responsiveness vs. stability</li>
+                    <li><strong>Weight bounds:</strong> Minimum 0.1 per model to prevent total exclusion</li>
+                    <li><strong>Update frequency:</strong> After each prediction cycle with known actuals</li>
+                    <li><strong>Convergence:</strong> Weights stabilize after ~10 prediction cycles</li>
+                </ul>
+            </div>
+        </section>
+
+
+        <!-- Additional Application Features -->
+        <section class="section" id="features">
+            <h2>✨ Additional Application Features</h2>
+
+            <p>Beyond the core time series forecasting, ChronosAI includes several application-level features
+                that provide the data pipeline and user experience for the forecasting system:</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h4>Automatic Activity Tracking</h4>
+                    <p>Background process monitors active windows every 10 seconds using pygetwindow,
+                        generating the raw time series data for all forecasting models.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h4>Smart App Classification</h4>
+                    <p>Random Forest classifier categorizes apps as productive or distracting,
+                        producing the daily productive-minutes time series used in LSTM/ARIMA/Prophet.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h4>Real-time Dashboard</h4>
+                    <p>Live productivity score, hourly breakdowns, weekly trends, and ML prediction
+                        charts — all driven by the time series forecasting backend.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h4>ML Insights Page</h4>
+                    <p>Dedicated page showing LSTM, ARIMA, and Prophet forecasts side-by-side with
+                        ensemble predictions and confidence intervals.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⏱️</div>
+                    <h4>Focus Mode (Pomodoro)</h4>
+                    <p>Pomodoro timer with app blocking and distraction detection. Focus sessions are
+                        stored and contribute to the time series dataset.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">💚</div>
+                    <h4>Wellness & Mood Tracking</h4>
+                    <p>Daily mood/energy/stress logging — this data feeds directly into the VAR model
+                        for mood-productivity bidirectional analysis.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h4>AI Coaching Chatbot</h4>
+                    <p>Google Gemini-powered coaching that interprets forecasting results and provides
+                        personalized productivity recommendations.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">👥</div>
+                    <h4>Team Collaboration</h4>
+                    <p>Create/join teams with leaderboards. Compare individual time series forecasts
+                        and productivity trends across team members.</p>
+                </div>
+            </div>
+        </section>
+
         <section class="section" id="tech">
-            <h2>ðŸ› ï¸ Technology Stack</h2>
+            <h2>🛠️ Technology Stack</h2>
 
             <h3>Frontend Technologies</h3>
             <table>
@@ -1152,15 +1430,30 @@ ensemble = (<span class="code-number">0.4</span> Ã— <span class="code-number"
                 </tr>
                 <tr>
                     <td><span class="badge badge-purple">Scikit-learn</span></td>
-                    <td>Preprocessing</td>
-                    <td>MinMaxScaler, train/test split utilities</td>
+                    <td>Preprocessing & Classification</td>
+                    <td>MinMaxScaler, RandomForest, train/test split utilities</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-purple">SHAP</span></td>
+                    <td>Explainable AI</td>
+                    <td>SHapley Additive exPlanations for model interpretability</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-purple">Google Gemini</span></td>
+                    <td>AI Coaching</td>
+                    <td>Gemini 2.0 Flash for context-aware productivity coaching chatbot</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-purple">Matplotlib</span></td>
+                    <td>Visualization</td>
+                    <td>ARIMA diagnostic plots (ADF test, AIC/BIC comparison)</td>
                 </tr>
             </table>
         </section>
 
         <!-- SECTION 8: Results & Metrics -->
         <section class="section" id="results">
-            <h2>ðŸ“ˆ Model Performance Results</h2>
+            <h2>📈 Time Series Model Performance Results</h2>
 
             <h3>Dataset Used</h3>
             <table>
@@ -1194,22 +1487,22 @@ ensemble = (<span class="code-number">0.4</span> Ã— <span class="code-number"
             <table>
                 <tr>
                     <th>Model</th>
-                    <th>MAE â†“</th>
-                    <th>RMSE â†“</th>
-                    <th>MAPE â†“</th>
+                    <th>MAE ↓</th>
+                    <th>RMSE ↓</th>
+                    <th>MAPE ↓</th>
                     <th>Best At</th>
                 </tr>
                 <tr>
                     <td><strong>LSTM</strong></td>
                     <td>103.3 min</td>
                     <td>114.54 min</td>
-                    <td style="color: #34d399;"><strong>65.33%</strong> â­</td>
+                    <td style="color: #34d399;"><strong>65.33%</strong> ✅</td>
                     <td>Percentage accuracy</td>
                 </tr>
                 <tr>
                     <td><strong>ARIMA (1,1,1)</strong></td>
-                    <td style="color: #34d399;"><strong>92.31 min</strong> â­</td>
-                    <td style="color: #34d399;"><strong>111.49 min</strong> â­</td>
+                    <td style="color: #34d399;"><strong>92.31 min</strong> ✅</td>
+                    <td style="color: #34d399;"><strong>111.49 min</strong> ✅</td>
                     <td>108.35%</td>
                     <td>Absolute error</td>
                 </tr>
@@ -1225,7 +1518,8 @@ ensemble = (<span class="code-number">0.4</span> Ã— <span class="code-number"
             <div class="highlight highlight-success">
                 <h4>Key Findings from Evaluation</h4>
                 <ul>
-                    <li><strong>ARIMA (1,1,1)</strong> achieved the lowest MAE (92.31 min) and RMSE (111.49 min) - best for
+                    <li><strong>ARIMA (1,1,1)</strong> achieved the lowest MAE (92.31 min) and RMSE (111.49 min) - best
+                        for
                         absolute accuracy</li>
                     <li><strong>LSTM</strong> achieved the best MAPE (65.33%) - best for percentage accuracy</li>
                     <li><strong>Prophet</strong> excels at capturing day-of-week patterns (weekday vs weekend)</li>
@@ -1236,26 +1530,38 @@ ensemble = (<span class="code-number">0.4</span> Ã— <span class="code-number"
 
         <!-- SECTION 9: Findings & Insights -->
         <section class="section" id="findings">
-            <h2>ðŸ” Key Findings & Learnings</h2>
+            <h2>🔍 Key Findings & Learnings</h2>
 
-            <h3>Technical Findings</h3>
+            <h3>Time Series Model Findings</h3>
             <ol>
-                <li><strong>ARIMA(1,0,0) Works Best:</strong> Simple AR(1) model outperformed complex configurations
-                    because productivity is largely influenced by the previous day</li>
-                <li><strong>LSTM Needs More Data:</strong> With only 91 days, LSTM couldn't fully leverage its
-                    pattern-learning capability</li>
-                <li><strong>Prophet Captures Seasonality:</strong> Successfully identified that weekends have 30-40%
-                    lower productivity</li>
-                <li><strong>Ensemble Reduces Variance:</strong> Combining models smooths out individual prediction
-                    spikes</li>
+                <li><strong>ARIMA(1,1,1) is Optimal:</strong> Simple AR(1) with first-order differencing outperformed
+                    complex configurations. Productivity is largely an autoregressive process — today's output is
+                    strongly influenced by yesterday's</li>
+                <li><strong>LSTM Needs Larger Datasets:</strong> With only 91 data points, LSTM couldn't fully leverage
+                    its deep learning capability. Time series with &lt;200 observations favor statistical models</li>
+                <li><strong>Prophet Excels at Seasonality:</strong> Successfully captured that weekends have 30-40%
+                    lower productivity. The additive decomposition (trend + weekly seasonality) fits the data well</li>
+                <li><strong>Ensemble Reduces Prediction Variance:</strong> Combining models via adaptive weighting
+                    smooths out individual model prediction spikes and reduces overall forecast uncertainty</li>
+                <li><strong>VAR Requires Sufficient Observations:</strong> Granger causality tests need at least
+                    7 days of aligned mood+productivity data to produce statistically meaningful results</li>
+                <li><strong>ADF Test Confirms Non-Stationarity:</strong> Raw productivity time series required
+                    first-order differencing before ARIMA modeling. The differenced series passed the ADF test
+                    at 5% significance level</li>
             </ol>
 
-            <h3>Productivity Patterns Discovered</h3>
+            <h3>Time Series Patterns Discovered</h3>
             <ul>
-                <li><strong>Peak Hours:</strong> 9 AM - 11 AM typically shows highest productive time</li>
-                <li><strong>Post-Lunch Dip:</strong> 1 PM - 3 PM shows increased distraction activity</li>
-                <li><strong>Weekend Drop:</strong> Saturday/Sunday productivity is 35% lower on average</li>
+                <li><strong>Weekly Seasonality:</strong> Clear 7-day periodicity — weekday productivity is 35% higher
+                    than weekends</li>
+                <li><strong>Autoregressive Nature:</strong> Strong lag-1 autocorrelation (today's productivity predicts
+                    tomorrow's)</li>
+                <li><strong>Peak Hours:</strong> 9 AM - 11 AM shows highest productive time (intra-day pattern)</li>
+                <li><strong>Post-Lunch Dip:</strong> 1 PM - 3 PM shows increased distraction (circadian effect on time
+                    series)</li>
                 <li><strong>Monday Surge:</strong> Start of week shows 5% higher productivity than weekly average</li>
+                <li><strong>Mood-Productivity Correlation:</strong> Cross-correlation analysis shows mood leads
+                    productivity by ~1 day</li>
             </ul>
 
             <h3>Challenges Faced & Solutions</h3>
@@ -1265,80 +1571,105 @@ ensemble = (<span class="code-number">0.4</span> Ã— <span class="code-number"
                     <th>Solution</th>
                 </tr>
                 <tr>
+                    <td>Non-stationary time series for ARIMA</td>
+                    <td>Applied ADF test + first differencing (d=1) to achieve stationarity</td>
+                </tr>
+                <tr>
+                    <td>LSTM sequence length tuning</td>
+                    <td>Experimented with lookback windows of 7, 14, 30 days; 7-day window optimal</td>
+                </tr>
+                <tr>
+                    <td>Prophet overfitting to holidays</td>
+                    <td>Disabled holiday effects; kept only weekly seasonality component</td>
+                </tr>
+                <tr>
+                    <td>Ensemble weight instability</td>
+                    <td>Exponential smoothing (alpha=0.3) + minimum weight bounds (0.1)</td>
+                </tr>
+                <tr>
+                    <td>VAR mood data sparsity</td>
+                    <td>Minimum 7-day threshold before running analysis; heuristic fallback otherwise</td>
+                </tr>
+                <tr>
                     <td>TensorFlow import errors</td>
-                    <td>Implemented fallback mode using statistical predictions</td>
+                    <td>Implemented fallback mode using statistical predictions when LSTM unavailable</td>
                 </tr>
                 <tr>
-                    <td>MongoDB ObjectId serialization</td>
-                    <td>Created _make_serializable helper to convert NumPy types</td>
-                </tr>
-                <tr>
-                    <td>Real-time data display</td>
-                    <td>Ensured all frontend components use actual database data</td>
-                </tr>
-                <tr>
-                    <td>Model retraining</td>
-                    <td>Auto-retrain every 20 activities using checkpoint system</td>
+                    <td>Model retraining overhead</td>
+                    <td>Auto-retrain every 20 new activities using checkpoint system</td>
                 </tr>
             </table>
 
             <h3>Future Improvements</h3>
             <ul>
-                <li>Deploy to cloud (Render/Railway) for remote access</li>
-                <li>Add mobile app for cross-device tracking</li>
-                <li>Implement app blocking during focus sessions</li>
-                <li>Add more advanced models (Transformer, XGBoost)</li>
-                <li>Create team/collaborative features</li>
+                <li>Add <strong>Transformer-based models</strong> (Temporal Fusion Transformer) for long-horizon
+                    forecasting</li>
+                <li>Implement <strong>GARCH models</strong> for productivity volatility modeling</li>
+                <li>Add <strong>exogenous variables</strong> (weather, calendar events) as ARIMAX/SARIMAX regressors
+                </li>
+                <li>Implement <strong>SARIMA</strong> for explicit seasonal differencing</li>
+                <li>Extend VAR to include <strong>energy and stress</strong> as additional endogenous variables</li>
+                <li>Collect 365+ days of data to improve LSTM and deep learning model performance</li>
             </ul>
         </section>
 
         <!-- Summary Section -->
         <section class="section">
-            <h2>ðŸ“ Project Summary</h2>
+            <h2>📝 Project Summary</h2>
 
             <div class="highlight">
-                <h3 style="color: var(--primary); margin-bottom: 16px;">ChronosAI in One Paragraph</h3>
+                <h3 style="color: var(--primary); margin-bottom: 16px;">Time Series Forecasting Summary</h3>
                 <p style="font-size: 1.1rem; line-height: 1.8;">
-                    <strong>ChronosAI</strong> is an AI-powered productivity tracking system that automatically monitors
-                    computer usage, classifies activities as productive or distracting, and uses
-                    <strong>three machine learning models (LSTM, ARIMA, and Prophet)</strong> to predict future
-                    productivity patterns. The ensemble approach combines the strengths of deep learning,
-                    statistical analysis, and seasonality modeling to provide accurate <strong>7-day forecasts</strong>.
-                    Built with <strong>React, Flask, and MongoDB</strong>, it offers a beautiful dashboard to visualize
-                    your productivity journey with real-time insights and actionable recommendations.
+                    <strong>ChronosAI</strong> is a time series forecasting application that predicts daily
+                    productivity patterns using <strong>four complementary approaches</strong>:
+                    <strong>LSTM</strong> (deep learning with gated recurrent units for sequential pattern learning),
+                    <strong>ARIMA</strong> (classical statistical autoregressive model with differencing for
+                    stationarity),
+                    <strong>Prophet</strong> (additive decomposition capturing weekly seasonality and trends), and
+                    <strong>VAR</strong> (multivariate model analyzing mood-productivity bidirectional Granger
+                    causality).
+                    An <strong>adaptive ensemble</strong> dynamically combines LSTM, ARIMA, and Prophet forecasts using
+                    inverse-error weighted averaging with exponential smoothing. The system automatically collects
+                    time series data from computer usage, applies stationarity tests (ADF), and produces
+                    <strong>7-day ahead forecasts</strong> that are compared across models using MAE, RMSE, and MAPE
+                    metrics.
                 </p>
             </div>
 
-            <h3>Quick Reference: What We Built</h3>
+            <h3>Quick Reference: Time Series Models Used</h3>
             <div class="metrics-grid">
                 <div class="metric-box">
-                    <div class="metric-value">3</div>
-                    <div class="metric-label">ML Models</div>
+                    <div class="metric-value">4</div>
+                    <div class="metric-label">Time Series Models (LSTM, ARIMA, Prophet, VAR)</div>
                 </div>
                 <div class="metric-box">
-                    <div class="metric-value">10s</div>
-                    <div class="metric-label">Tracking Interval</div>
+                    <div class="metric-value">3</div>
+                    <div class="metric-label">Forecasting Approaches (DL, Statistical, Additive)</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-value">91</div>
+                    <div class="metric-label">Days of Time Series Data</div>
                 </div>
                 <div class="metric-box">
                     <div class="metric-value">7</div>
-                    <div class="metric-label">Day Forecasts</div>
+                    <div class="metric-label">Day Forecast Horizon</div>
                 </div>
                 <div class="metric-box">
-                    <div class="metric-value">16</div>
-                    <div class="metric-label">React Components</div>
+                    <div class="metric-value">4</div>
+                    <div class="metric-label">Evaluation Metrics (MAE, RMSE, MAPE, ADF)</div>
                 </div>
                 <div class="metric-box">
-                    <div class="metric-value">12+</div>
-                    <div class="metric-label">REST API Endpoints</div>
+                    <div class="metric-value">80/20</div>
+                    <div class="metric-label">Train/Test Split (72/19 days)</div>
                 </div>
             </div>
         </section>
 
         <footer>
-            <div class="logo">ðŸŽ¯ ChronosAI</div>
-            <p>AI-Powered Productivity Tracking & Prediction System</p>
-            <p style="margin-top: 16px;">Built with â¤ï¸ using React, Flask, MongoDB, and Machine Learning</p>
-            <p style="margin-top: 8px; font-size: 0.85rem;">Â© 2024 - Semester 6 Project Documentation</p>
+            <div class="logo">🎯 ChronosAI</div>
+            <p>Time Series Forecasting for Productivity Prediction</p>
+            <p style="margin-top: 16px;">Built with LSTM, ARIMA, Prophet, VAR | React + Flask + MongoDB</p>
+            <p style="margin-top: 8px; font-size: 0.85rem;">© 2025 - Semester 6 Time Series Project</p>
         </footer>
     </div>
 </body>

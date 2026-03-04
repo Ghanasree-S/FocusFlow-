@@ -66,7 +66,7 @@ def _daily_aggregates(activities):
 @token_required
 def shap_explanations():
     try:
-        from ml.shap_explainer import SHAPExplainer
+        from ml import get_shap_explainer
 
         db = get_db()
         user_id = _user_id(request)
@@ -87,7 +87,7 @@ def shap_explanations():
             'avg_duration': sum(durations) / max(len(durations), 1),
         }
 
-        explainer = SHAPExplainer()
+        explainer = get_shap_explainer()
         result = explainer.explain(weekly_trends, task_stats, focus_stats)
 
         return jsonify(result)
@@ -102,14 +102,14 @@ def shap_explanations():
 @token_required
 def fatigue_index():
     try:
-        from ml.fatigue_index import DigitalFatigueIndex
+        from ml import get_fatigue_index
 
         db = get_db()
         user_id = _user_id(request)
         activities = _get_activities(db, user_id, days=1)  # today
         sessions = _get_focus_sessions(db, user_id, days=1)
 
-        dfi = DigitalFatigueIndex()
+        dfi = get_fatigue_index()
         result = dfi.compute(activities, sessions)
 
         return jsonify(result)
@@ -124,13 +124,13 @@ def fatigue_index():
 @token_required
 def context_switch():
     try:
-        from ml.context_switch import ContextSwitchAnalyzer
+        from ml import get_context_switch_analyzer
 
         db = get_db()
         user_id = _user_id(request)
         activities = _get_activities(db, user_id)
 
-        analyzer = ContextSwitchAnalyzer()
+        analyzer = get_context_switch_analyzer()
         result = analyzer.analyze(activities)
 
         return jsonify(result)
@@ -145,13 +145,13 @@ def context_switch():
 @token_required
 def procrastination():
     try:
-        from ml.procrastination_detector import ProcrastinationDetector
+        from ml import get_procrastination_detector
 
         db = get_db()
         user_id = _user_id(request)
         activities = _get_activities(db, user_id)
 
-        detector = ProcrastinationDetector()
+        detector = get_procrastination_detector()
         result = detector.analyze(activities)
 
         return jsonify(result)
@@ -166,10 +166,10 @@ def procrastination():
 @token_required
 def ensemble_weights():
     try:
-        from ml.adaptive_ensemble import AdaptiveEnsembleOptimizer
+        from ml import get_adaptive_ensemble_optimizer
 
         user_id = str(_user_id(request))
-        optimizer = AdaptiveEnsembleOptimizer()
+        optimizer = get_adaptive_ensemble_optimizer()
         weights = optimizer.get_weights(user_id)
         report = optimizer.get_performance_report(user_id)
 
@@ -185,13 +185,13 @@ def ensemble_weights():
 @token_required
 def simulate_ensemble():
     try:
-        from ml.adaptive_ensemble import AdaptiveEnsembleOptimizer
+        from ml import get_adaptive_ensemble_optimizer
 
         user_id = str(_user_id(request))
         data = request.get_json(silent=True) or {}
         days = data.get('days', 14)
 
-        optimizer = AdaptiveEnsembleOptimizer()
+        optimizer = get_adaptive_ensemble_optimizer()
         result = optimizer.simulate_adaptation(user_id, days=days)
 
         return jsonify(result)
@@ -206,7 +206,7 @@ def simulate_ensemble():
 @token_required
 def mood_productivity():
     try:
-        from ml.mood_productivity_var import MoodProductivityVAR
+        from ml import get_mood_productivity_var
 
         db = get_db()
         user_id = _user_id(request)
@@ -235,7 +235,7 @@ def mood_productivity():
         activities = _get_activities(db, user_id, days=60)
         productivity_history = _daily_aggregates(activities)
 
-        var_model = MoodProductivityVAR()
+        var_model = get_mood_productivity_var()
         result = var_model.analyze(mood_history, productivity_history)
 
         return jsonify(result)
@@ -262,7 +262,7 @@ def novel_overview():
 
     # 1. SHAP
     try:
-        from ml.shap_explainer import SHAPExplainer
+        from ml import get_shap_explainer
         weekly_trends = _daily_aggregates(activities)
         tasks = list(db.tasks.find({'user_id': user_id}, {'_id': 0}))
         task_stats = {
@@ -276,15 +276,15 @@ def novel_overview():
             'total_sessions': len(all_sessions),
             'avg_duration': sum(durations) / max(len(durations), 1),
         }
-        explainer = SHAPExplainer()
+        explainer = get_shap_explainer()
         results['shap'] = explainer.explain(weekly_trends, task_stats, focus_stats)
     except Exception as e:
         results['shap'] = {'error': str(e)}
 
     # 2. Fatigue
     try:
-        from ml.fatigue_index import DigitalFatigueIndex
-        dfi = DigitalFatigueIndex()
+        from ml import get_fatigue_index
+        dfi = get_fatigue_index()
         today_acts = [a for a in activities if (a.get('start_time', datetime.min)).date() == datetime.utcnow().date()] if activities else []
         results['fatigue'] = dfi.compute(today_acts, sessions)
     except Exception as e:
@@ -292,24 +292,24 @@ def novel_overview():
 
     # 3. Context-Switch
     try:
-        from ml.context_switch import ContextSwitchAnalyzer
-        analyzer = ContextSwitchAnalyzer()
+        from ml import get_context_switch_analyzer
+        analyzer = get_context_switch_analyzer()
         results['context_switch'] = analyzer.analyze(activities)
     except Exception as e:
         results['context_switch'] = {'error': str(e)}
 
     # 4. Procrastination
     try:
-        from ml.procrastination_detector import ProcrastinationDetector
-        detector = ProcrastinationDetector()
+        from ml import get_procrastination_detector
+        detector = get_procrastination_detector()
         results['procrastination'] = detector.analyze(activities)
     except Exception as e:
         results['procrastination'] = {'error': str(e)}
 
     # 5. Ensemble
     try:
-        from ml.adaptive_ensemble import AdaptiveEnsembleOptimizer
-        optimizer = AdaptiveEnsembleOptimizer()
+        from ml import get_adaptive_ensemble_optimizer
+        optimizer = get_adaptive_ensemble_optimizer()
         uid_str = str(user_id)
         results['ensemble'] = {
             'weights': optimizer.get_weights(uid_str),
@@ -320,7 +320,7 @@ def novel_overview():
 
     # 6. Mood-Productivity
     try:
-        from ml.mood_productivity_var import MoodProductivityVAR
+        from ml import get_mood_productivity_var
         mood_entries = list(db.mood_logs.find({'user_id': user_id}, {'_id': 0}).sort('timestamp', 1))
         mood_history = []
         for m in mood_entries:
@@ -328,7 +328,7 @@ def novel_overview():
             date_str = ts.strftime('%Y-%m-%d') if isinstance(ts, datetime) else str(ts)[:10]
             mood_history.append({'date': date_str, 'mood': m.get('mood', 3), 'energy': m.get('energy', 3), 'stress': m.get('stress', 3)})
         productivity_history = _daily_aggregates(_get_activities(db, user_id, days=60))
-        var_model = MoodProductivityVAR()
+        var_model = get_mood_productivity_var()
         results['mood_productivity'] = var_model.analyze(mood_history, productivity_history)
     except Exception as e:
         results['mood_productivity'] = {'error': str(e), 'has_sufficient_data': False}
