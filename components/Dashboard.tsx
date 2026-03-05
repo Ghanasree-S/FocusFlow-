@@ -2,9 +2,10 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Task } from '../types';
 import { insightsApi } from '../services/api';
+import { getCachedData, setCachedData, isCacheFresh, getCacheAgeLabel } from '../services/dataCache';
 import {
   CheckCircle2,
   Clock,
@@ -32,24 +33,43 @@ interface DashboardData {
   totalMinutes?: number;
 }
 
+const DASHBOARD_CACHE_KEY = 'dashboard';
+
+interface DashboardCacheData {
+  dashboardData: DashboardData;
+  distractionPatterns: any;
+}
+
 const Dashboard: React.FC<DashboardProps> = ({ tasks, setView }) => {
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(() => {
-    // Load cached data immediately on mount
-    const cached = localStorage.getItem('ChronosAI_dashboard_cache');
-    return cached ? JSON.parse(cached) : null;
-  });
-  const [isLoading, setIsLoading] = useState(!localStorage.getItem('ChronosAI_dashboard_cache'));
-  const [lastUpdated, setLastUpdated] = useState<string>('');
-  const [distractionPatterns, setDistractionPatterns] = useState<any>(null);
+  const cached = getCachedData<DashboardCacheData>(DASHBOARD_CACHE_KEY);
+
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(cached?.dashboardData ?? null);
+  const [isLoading, setIsLoading] = useState(!cached);
+  const [lastUpdated, setLastUpdated] = useState<string>(getCacheAgeLabel(DASHBOARD_CACHE_KEY));
+  const [distractionPatterns, setDistractionPatterns] = useState<any>(cached?.distractionPatterns ?? null);
 
   useEffect(() => {
     const fetchDashboard = async () => {
+      // Skip if cache is fresh
+      if (isCacheFresh(DASHBOARD_CACHE_KEY) && cached) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const data = await insightsApi.getDashboard();
         setDashboardData(data);
-        // Cache the data
-        localStorage.setItem('ChronosAI_dashboard_cache', JSON.stringify(data));
-        setLastUpdated(new Date().toLocaleTimeString());
+        setLastUpdated('Just now');
+
+        // Also fetch distraction patterns
+        const distrData = await insightsApi.getDistractionPatterns().catch(() => null);
+        setDistractionPatterns(distrData);
+
+        // Save both to cache
+        setCachedData<DashboardCacheData>(DASHBOARD_CACHE_KEY, {
+          dashboardData: data,
+          distractionPatterns: distrData,
+        });
       } catch (error) {
         console.error('Failed to fetch dashboard:', error);
       } finally {
@@ -57,22 +77,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, setView }) => {
       }
     };
 
-    const fetchDistractionPatterns = async () => {
-      try {
-        const data = await insightsApi.getDistractionPatterns();
-        setDistractionPatterns(data);
-      } catch (e) {
-        // optional
-      }
-    };
-
-    // Fetch immediately
     fetchDashboard();
-    fetchDistractionPatterns();
-
-    // Then refresh every 60 seconds
-    const interval = setInterval(fetchDashboard, 60000);
-    return () => clearInterval(interval);
   }, []);
 
   // Use ONLY real data from API - no mock fallbacks
@@ -89,15 +94,15 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, setView }) => {
   const timeSeriesData = dashboardData?.hourlyData?.length
     ? dashboardData.hourlyData
     : [
-        { time: '6AM', productive: 5, distracted: 2 },
-        { time: '8AM', productive: 25, distracted: 5 },
-        { time: '10AM', productive: 40, distracted: 8 },
-        { time: '12PM', productive: 30, distracted: 15 },
-        { time: '2PM', productive: 45, distracted: 10 },
-        { time: '4PM', productive: 35, distracted: 12 },
-        { time: '6PM', productive: 20, distracted: 18 },
-        { time: '8PM', productive: 10, distracted: 8 },
-      ];
+      { time: '6AM', productive: 5, distracted: 2 },
+      { time: '8AM', productive: 25, distracted: 5 },
+      { time: '10AM', productive: 40, distracted: 8 },
+      { time: '12PM', productive: 30, distracted: 15 },
+      { time: '2PM', productive: 45, distracted: 10 },
+      { time: '4PM', productive: 35, distracted: 12 },
+      { time: '6PM', productive: 20, distracted: 18 },
+      { time: '8PM', productive: 10, distracted: 8 },
+    ];
 
   if (isLoading) {
     return (
@@ -165,18 +170,16 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, setView }) => {
             <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3">
               <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Distraction Level</p>
               <div className="flex items-end gap-2">
-                <span className={`text-xl font-bold ${
-                  distractionSpikes > 5 ? 'text-rose-500' : distractionSpikes > 2 ? 'text-amber-500' : 'text-emerald-500'
-                }`}>
+                <span className={`text-xl font-bold ${distractionSpikes > 5 ? 'text-rose-500' : distractionSpikes > 2 ? 'text-amber-500' : 'text-emerald-500'
+                  }`}>
                   {distractionSpikes > 5 ? 'High' : distractionSpikes > 2 ? 'Moderate' : 'Low'}
                 </span>
                 {distractionSpikes > 2 && <TrendingDown className="w-4 h-4 text-rose-400 mb-1" />}
               </div>
               <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mt-2 overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all ${
-                    distractionSpikes > 5 ? 'bg-rose-500' : distractionSpikes > 2 ? 'bg-amber-500' : 'bg-emerald-500'
-                  }`}
+                  className={`h-full rounded-full transition-all ${distractionSpikes > 5 ? 'bg-rose-500' : distractionSpikes > 2 ? 'bg-amber-500' : 'bg-emerald-500'
+                    }`}
                   style={{ width: `${Math.min(100, distractionSpikes * 10)}%` }}
                 ></div>
               </div>
@@ -343,7 +346,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, setView }) => {
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2 truncate">{task.title}</p>
                 <div className="w-full h-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   {/* eslint-disable-next-line jsx-a11y/no-unknown-property, react/no-unknown-property */}
-              <div
+                  <div
                     className="h-full bg-indigo-500 transition-all duration-1000"
                     style={{ width: `${task.progress}%` }}
                   ></div>

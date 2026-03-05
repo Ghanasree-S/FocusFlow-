@@ -10,8 +10,9 @@
  *  5. Adaptive Ensemble Weights
  *  6. Mood–Productivity Bidirectional VAR
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { novelApi } from '../services/api';
+import { getCachedData, setCachedData, isCacheFresh, getCacheAgeLabel } from '../services/dataCache';
 import {
   Sparkles,
   Brain,
@@ -138,26 +139,39 @@ interface OverviewData {
 }
 
 /* ============================================================ Component ==== */
-const NovelInsights: React.FC = () => {
-  const [data, setData] = useState<OverviewData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<number>(0);
+const NOVEL_CACHE_KEY = 'novel_insights';
 
-  const loadData = async () => {
-    setLoading(true);
+const NovelInsights: React.FC = () => {
+  const cached = getCachedData<OverviewData>(NOVEL_CACHE_KEY);
+
+  const [data, setData] = useState<OverviewData | null>(cached);
+  const [loading, setLoading] = useState(!cached);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<number>(0);
+  const [lastUpdated, setLastUpdated] = useState(getCacheAgeLabel(NOVEL_CACHE_KEY));
+
+  const loadData = useCallback(async (force = false) => {
+    if (!force && isCacheFresh(NOVEL_CACHE_KEY) && cached) return;
+
+    if (!cached) setLoading(true);
+    else setIsRefreshing(true);
+
     try {
       const result = await novelApi.getOverview();
       setData(result);
+      setCachedData(NOVEL_CACHE_KEY, result);
+      setLastUpdated('Just now');
     } catch (err) {
       console.error('Failed to load novel insights', err);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const tabs = [
     { label: 'SHAP AI', icon: Eye, color: 'indigo' },
@@ -192,9 +206,14 @@ const NovelInsights: React.FC = () => {
             <p className="text-xs text-slate-500 dark:text-slate-400">6 conference-paper-level contributions</p>
           </div>
         </div>
-        <button onClick={loadData} title="Refresh data" className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 transition-all">
-          <RefreshCw className="w-4 h-4 text-slate-500" />
-        </button>
+        <div className="flex items-center gap-3">
+          {lastUpdated && (
+            <span className="text-[10px] text-slate-400 font-medium">Updated {lastUpdated}</span>
+          )}
+          <button onClick={() => loadData(true)} disabled={isRefreshing} title="Refresh data" className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 transition-all disabled:opacity-50">
+            <RefreshCw className={`w-4 h-4 text-slate-500 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Tab bar */}
@@ -203,11 +222,10 @@ const NovelInsights: React.FC = () => {
           <button
             key={i}
             onClick={() => setActiveTab(i)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-              activeTab === i
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${activeTab === i
                 ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30'
                 : 'bg-white dark:bg-slate-900 text-slate-500 border border-slate-200 dark:border-slate-800 hover:border-slate-300'
-            }`}
+              }`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
@@ -434,11 +452,10 @@ const ContextSwitchPanel: React.FC<{ data?: ContextSwitchData }> = ({ data }) =>
               <span className="flex-1 truncate text-slate-700 dark:text-slate-300">{t.from}</span>
               <ArrowRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
               <span className="flex-1 truncate text-slate-700 dark:text-slate-300">{t.to}</span>
-              <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${
-                t.cost === 'high' ? 'bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300'
+              <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${t.cost === 'high' ? 'bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300'
                   : t.cost === 'medium' ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-              }`}>
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                }`}>
                 {t.count}x
               </span>
             </div>
@@ -482,9 +499,8 @@ const ProcrastinationPanel: React.FC<{ data?: ProcrastinationData }> = ({ data }
           <div className={`text-5xl font-bold text-${riskColor}-600 dark:text-${riskColor}-400`}>{risk}</div>
           <p className="text-sm text-slate-500">out of 100</p>
           <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-            <div className={`h-full bg-gradient-to-r ${
-              risk < 30 ? 'from-emerald-400 to-emerald-500' : risk < 60 ? 'from-amber-400 to-orange-500' : 'from-rose-400 to-red-500'
-            } rounded-full transition-all`} style={{ width: `${risk}%` }} />
+            <div className={`h-full bg-gradient-to-r ${risk < 30 ? 'from-emerald-400 to-emerald-500' : risk < 60 ? 'from-amber-400 to-orange-500' : 'from-rose-400 to-red-500'
+              } rounded-full transition-all`} style={{ width: `${risk}%` }} />
           </div>
           <div className="grid grid-cols-2 gap-3 w-full mt-2">
             <MetricBox label="Episodes" value={totalEpisodes} color="rose" />
@@ -516,18 +532,19 @@ const ProcrastinationPanel: React.FC<{ data?: ProcrastinationData }> = ({ data }
           {patterns.slice(0, 4).map((p: any, i: number) => {
             const seq = p.sequence || p.pattern || [];
             return (
-            <div key={i} className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20">
-              <div className="flex items-center gap-1 flex-wrap mb-1">
-                {seq.map((s: string, j: number) => (
-                  <React.Fragment key={j}>
-                    <span className="text-xs font-mono px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-purple-700 dark:text-purple-300">{s}</span>
-                    {j < seq.length - 1 && <ArrowRight className="w-3 h-3 text-purple-400" />}
-                  </React.Fragment>
-                ))}
+              <div key={i} className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20">
+                <div className="flex items-center gap-1 flex-wrap mb-1">
+                  {seq.map((s: string, j: number) => (
+                    <React.Fragment key={j}>
+                      <span className="text-xs font-mono px-1.5 py-0.5 bg-white dark:bg-slate-800 rounded text-purple-700 dark:text-purple-300">{s}</span>
+                      {j < seq.length - 1 && <ArrowRight className="w-3 h-3 text-purple-400" />}
+                    </React.Fragment>
+                  ))}
+                </div>
+                <p className="text-xs text-purple-600 dark:text-purple-400">Support: {((p.support ?? 0) * 100).toFixed(0)}%</p>
               </div>
-              <p className="text-xs text-purple-600 dark:text-purple-400">Support: {((p.support ?? 0) * 100).toFixed(0)}%</p>
-            </div>
-          );})}
+            );
+          })}
           {patterns.length === 0 && <p className="text-xs text-slate-400">Not enough episodes for pattern mining.</p>}
         </div>
         {recommendations.length > 0 && (
@@ -595,11 +612,10 @@ const EnsemblePanel: React.FC<{ data?: EnsembleData }> = ({ data }) => {
         <div className="space-y-3 mb-5">
           {ranking.map((name, i) => (
             <div key={name} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
-                i === 0 ? 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-300'
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${i === 0 ? 'bg-yellow-100 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-300'
                   : i === 1 ? 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-                  : 'bg-orange-100 dark:bg-orange-500/10 text-orange-700 dark:text-orange-300'
-              }`}>
+                    : 'bg-orange-100 dark:bg-orange-500/10 text-orange-700 dark:text-orange-300'
+                }`}>
                 #{i + 1}
               </div>
               <span className="text-sm font-medium text-slate-800 dark:text-white uppercase">{name}</span>
@@ -658,8 +674,8 @@ const MoodProductivityPanel: React.FC<{ data?: MoodData }> = ({ data }) => {
 
   const directionIcon = dom.direction === 'mood_drives_productivity' ? <ArrowRight className="w-4 h-4" />
     : dom.direction === 'productivity_drives_mood' ? <ArrowRight className="w-4 h-4 rotate-180" />
-    : dom.direction === 'bidirectional' ? <ArrowLeftRight className="w-4 h-4" />
-    : <Activity className="w-4 h-4" />;
+      : dom.direction === 'bidirectional' ? <ArrowLeftRight className="w-4 h-4" />
+        : <Activity className="w-4 h-4" />;
 
   return (
     <div className="space-y-5">

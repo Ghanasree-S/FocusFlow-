@@ -5,8 +5,9 @@
  * MLInsights Component
  * Displays LSTM, ARIMA, and Prophet time series predictions with line graphs
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { insightsApi } from '../services/api';
+import { getCachedData, setCachedData, isCacheFresh, getCacheAgeLabel } from '../services/dataCache';
 import {
     Brain,
     TrendingUp,
@@ -80,20 +81,35 @@ interface Pattern {
     icon: string;
 }
 
+const ML_CACHE_KEY = 'ml_insights';
+const ML_METRICS_CACHE_KEY = 'ml_eval_metrics';
+
+interface MLCacheData {
+    models: { lstm: ModelInfo | null; arima: ModelInfo | null; prophet: ModelInfo | null };
+    modelStatus: any;
+    forecast: ForecastData | null;
+    patterns: Pattern[];
+}
+
 const MLInsights: React.FC = () => {
+    // Load from cache immediately
+    const cached = getCachedData<MLCacheData>(ML_CACHE_KEY);
+    const cachedMetrics = getCachedData<any>(ML_METRICS_CACHE_KEY);
+
     const [models, setModels] = useState<{
         lstm: ModelInfo | null;
         arima: ModelInfo | null;
         prophet: ModelInfo | null;
-    }>({ lstm: null, arima: null, prophet: null });
+    }>(cached?.models ?? { lstm: null, arima: null, prophet: null });
     const [modelStatus, setModelStatus] = useState<{
         lstm: ModelStatus;
         arima: ModelStatus;
         prophet: ModelStatus;
-    } | null>(null);
-    const [forecast, setForecast] = useState<ForecastData | null>(null);
-    const [patterns, setPatterns] = useState<Pattern[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    } | null>(cached?.modelStatus ?? null);
+    const [forecast, setForecast] = useState<ForecastData | null>(cached?.forecast ?? null);
+    const [patterns, setPatterns] = useState<Pattern[]>(cached?.patterns ?? []);
+    const [isLoading, setIsLoading] = useState(!cached);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [isTraining, setIsTraining] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [evalMetrics, setEvalMetrics] = useState<{
@@ -101,8 +117,9 @@ const MLInsights: React.FC = () => {
         best_model: string;
         evaluation_samples: number;
         training_samples: number;
-    } | null>(null);
+    } | null>(cachedMetrics ?? null);
     const [metricsLoading, setMetricsLoading] = useState(false);
+    const [lastUpdated, setLastUpdated] = useState(getCacheAgeLabel(ML_CACHE_KEY));
 
     // Graph dimensions
     const graphWidth = 700;
@@ -115,8 +132,12 @@ const MLInsights: React.FC = () => {
         fetchMLData();
     }, []);
 
-    const fetchMLData = async () => {
-        setIsLoading(true);
+    const fetchMLData = async (force = false) => {
+        // Skip if cache is fresh and not forced
+        if (!force && isCacheFresh(ML_CACHE_KEY) && cached) return;
+
+        if (!cached) setIsLoading(true);
+        else setIsRefreshing(true);
         setError(null);
 
         try {
@@ -127,26 +148,41 @@ const MLInsights: React.FC = () => {
                 insightsApi.getBehavioralPatterns().catch(() => ({ patterns: [] }))
             ]);
 
+            let newModels = models;
+            let newModelStatus = modelStatus;
+
             // Set forecast and patterns
             if (forecastData) setForecast(forecastData);
             if (patternsData?.patterns) setPatterns(patternsData.patterns);
 
             if (realtimeResponse?.status === 'success' && realtimeResponse.models) {
-                setModels({
+                newModels = {
                     lstm: realtimeResponse.models.lstm,
                     arima: realtimeResponse.models.arima,
                     prophet: realtimeResponse.models.prophet,
-                });
-                setModelStatus(realtimeResponse);
+                };
+                newModelStatus = realtimeResponse;
+                setModels(newModels);
+                setModelStatus(newModelStatus);
             } else {
                 // Fallback to compare models if realtime not available
                 const compareResponse = await insightsApi.compareModels();
-                setModels({
+                newModels = {
                     lstm: compareResponse.models?.lstm || null,
                     arima: compareResponse.models?.arima || null,
                     prophet: compareResponse.models?.prophet || null,
-                });
+                };
+                setModels(newModels);
             }
+
+            // Save to cache
+            setCachedData<MLCacheData>(ML_CACHE_KEY, {
+                models: newModels,
+                modelStatus: newModelStatus,
+                forecast: forecastData,
+                patterns: patternsData?.patterns || [],
+            });
+            setLastUpdated('Just now');
         } catch (err: any) {
             console.error('ML fetch error:', err);
             // Try fallback without error
@@ -162,6 +198,7 @@ const MLInsights: React.FC = () => {
             }
         } finally {
             setIsLoading(false);
+            setIsRefreshing(false);
         }
     };
 
@@ -178,11 +215,14 @@ const MLInsights: React.FC = () => {
         }
     };
 
-    const fetchEvalMetrics = async () => {
+    const fetchEvalMetrics = async (force = false) => {
+        if (!force && isCacheFresh(ML_METRICS_CACHE_KEY) && cachedMetrics) return;
+
         setMetricsLoading(true);
         try {
             const data = await insightsApi.getEvaluationMetrics();
             setEvalMetrics(data);
+            setCachedData(ML_METRICS_CACHE_KEY, data);
         } catch {
             // Metrics may not be available with insufficient data — that's ok
         } finally {
@@ -294,11 +334,15 @@ const MLInsights: React.FC = () => {
                     <p className="text-sm text-slate-500 mt-1">LSTM, ARIMA & Prophet model predictions</p>
                 </div>
                 <div className="flex gap-2">
+                    {lastUpdated && (
+                        <span className="text-[10px] text-slate-400 font-medium">Updated {lastUpdated}</span>
+                    )}
                     <button
-                        onClick={fetchMLData}
-                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all"
+                        onClick={() => fetchMLData(true)}
+                        disabled={isRefreshing}
+                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all disabled:opacity-50"
                     >
-                        <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                         <span>Refresh</span>
                     </button>
                     <button
@@ -690,7 +734,7 @@ const MLInsights: React.FC = () => {
                         <div className="flex items-center gap-3 text-xs text-slate-500">
                             <span>{evalMetrics.training_samples} train / {evalMetrics.evaluation_samples} test samples</span>
                             <button
-                                onClick={fetchEvalMetrics}
+                                onClick={() => fetchEvalMetrics(true)}
                                 disabled={metricsLoading}
                                 title="Refresh metrics"
                                 className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"

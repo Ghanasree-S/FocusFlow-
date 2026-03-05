@@ -2,8 +2,9 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { insightsApi, tasksApi, focusApi } from '../services/api';
+import { getCachedData, setCachedData, isCacheFresh, getCacheAgeLabel } from '../services/dataCache';
 import {
   FileText,
   Download,
@@ -39,23 +40,42 @@ interface ReportData {
   streakDays: number;
 }
 
+const REPORT_CACHE_PREFIX = 'reports';
+
 const Reports: React.FC = () => {
   const [report, setReport] = useState<ReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [period, setPeriod] = useState<ReportPeriod>('weekly');
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
-  const [generatedReports, setGeneratedReports] = useState<Array<{title: string; date: string; type: string; data?: any}>>([]);
+  const [generatedReports, setGeneratedReports] = useState<Array<{ title: string; date: string; type: string; data?: any }>>([]);
+  const [lastUpdated, setLastUpdated] = useState('');
+
+  const getCacheKey = () => `${REPORT_CACHE_PREFIX}_${period}_${period === 'weekly' ? weekOffset : monthOffset}`;
 
   useEffect(() => {
+    const cacheKey = getCacheKey();
+    const cached = getCachedData<ReportData>(cacheKey);
+    if (cached) {
+      setReport(cached);
+      setIsLoading(false);
+      setLastUpdated(getCacheAgeLabel(cacheKey));
+    }
     fetchReport();
   }, [period, weekOffset, monthOffset]);
 
-  const fetchReport = async () => {
-    setIsLoading(true);
+  const fetchReport = async (force = false) => {
+    const cacheKey = getCacheKey();
+    if (!force && isCacheFresh(cacheKey) && getCachedData(cacheKey)) {
+      return;
+    }
+
+    if (!report) setIsLoading(true);
+    else setIsRefreshing(true);
     try {
       const days = period === 'weekly' ? 7 : 30;
-      
+
       // Fetch data from multiple sources
       const [weeklyReport, taskStats, focusStats, trends] = await Promise.all([
         insightsApi.getWeeklyReport().catch(() => ({ report: null })),
@@ -124,11 +144,14 @@ const Reports: React.FC = () => {
       };
 
       setReport(reportData);
+      setCachedData(getCacheKey(), reportData);
+      setLastUpdated('Just now');
     } catch (error) {
       console.error('Failed to fetch report:', error);
       setReport(null);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -199,7 +222,7 @@ Focus Score,${report.focusScore}%`;
         <p className="text-slate-500 dark:text-slate-400 max-w-md">
           Start using ChronosAI to track tasks and focus sessions. Reports will be generated automatically from your activity data.
         </p>
-        <button onClick={fetchReport} className="mt-4 flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all">
+        <button onClick={() => fetchReport(true)} className="mt-4 flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all">
           <RefreshCw className="w-4 h-4" />
           Retry
         </button>
@@ -207,8 +230,8 @@ Focus Score,${report.focusScore}%`;
     );
   }
 
-  const completionVelocity = report 
-    ? (report.tasksCompleted / (period === 'weekly' ? 7 : 30)).toFixed(1) 
+  const completionVelocity = report
+    ? (report.tasksCompleted / (period === 'weekly' ? 7 : 30)).toFixed(1)
     : '0';
 
   return (
@@ -244,8 +267,8 @@ Focus Score,${report.focusScore}%`;
             <span className="px-2 text-xs font-bold text-slate-600 dark:text-slate-400 min-w-[120px] text-center">
               {report?.periodLabel || 'Current'}
             </span>
-            <button 
-              onClick={() => navigatePeriod('next')} 
+            <button
+              onClick={() => navigatePeriod('next')}
               disabled={(period === 'weekly' && weekOffset === 0) || (period === 'monthly' && monthOffset === 0)}
               className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg disabled:opacity-30"
               title="Next period"

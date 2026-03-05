@@ -2,8 +2,9 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { insightsApi } from '../services/api';
+import { getCachedData, setCachedData, isCacheFresh, getCacheAgeLabel } from '../services/dataCache';
 import {
   BarChart3,
   TrendingUp,
@@ -17,8 +18,18 @@ import {
   ArrowDownRight,
   Minus,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  RefreshCw
 } from 'lucide-react';
+
+const CACHE_KEY = 'analytics';
+
+interface AnalyticsCacheData {
+  trendData: any;
+  prevWeekData: any;
+  focusWindows: any;
+  distractions: any;
+}
 
 interface TrendData {
   weeklyTrends: Array<{ date: string; productive_minutes: number; distracting_minutes: number }>;
@@ -27,38 +38,59 @@ interface TrendData {
 }
 
 const Analytics: React.FC = () => {
-  const [trendData, setTrendData] = useState<TrendData | null>(null);
-  const [prevWeekData, setPrevWeekData] = useState<TrendData | null>(null);
-  const [focusWindows, setFocusWindows] = useState<any | null>(null);
-  const [distractions, setDistractions] = useState<any | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Load from cache immediately
+  const cached = getCachedData<AnalyticsCacheData>(CACHE_KEY);
+
+  const [trendData, setTrendData] = useState<TrendData | null>(cached?.trendData ?? null);
+  const [prevWeekData, setPrevWeekData] = useState<TrendData | null>(cached?.prevWeekData ?? null);
+  const [focusWindows, setFocusWindows] = useState<any | null>(cached?.focusWindows ?? null);
+  const [distractions, setDistractions] = useState<any | null>(cached?.distractions ?? null);
+  const [isLoading, setIsLoading] = useState(!cached);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [comparisonDay, setComparisonDay] = useState(0); // 0 = today vs yesterday, index into weeklyTrends
+  const [lastUpdated, setLastUpdated] = useState(getCacheAgeLabel(CACHE_KEY));
 
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const hours = ['8am', '10am', '12pm', '2pm', '4pm', '6pm', '8pm', '10pm'];
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        const [trendsData, prevTrendsData, windowsData, distractionsData] = await Promise.all([
-          insightsApi.getTrends(7),
-          insightsApi.getTrends(14),
-          insightsApi.getFocusWindows(),
-          insightsApi.getDistractionPatterns()
-        ]);
-        setTrendData(trendsData);
-        setPrevWeekData(prevTrendsData);
-        setDistractions(distractionsData);
-        setFocusWindows(windowsData);
-      } catch (error) {
-        console.error('Failed to fetch analytics:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchAnalytics = useCallback(async (force = false) => {
+    // Skip fetch if cache is fresh and not forced
+    if (!force && isCacheFresh(CACHE_KEY) && cached) return;
 
-    fetchAnalytics();
+    if (!cached) setIsLoading(true);
+    else setIsRefreshing(true);
+
+    try {
+      const [trendsData, prevTrendsData, windowsData, distractionsData] = await Promise.all([
+        insightsApi.getTrends(7),
+        insightsApi.getTrends(14),
+        insightsApi.getFocusWindows(),
+        insightsApi.getDistractionPatterns()
+      ]);
+      setTrendData(trendsData);
+      setPrevWeekData(prevTrendsData);
+      setDistractions(distractionsData);
+      setFocusWindows(windowsData);
+
+      // Save to cache
+      setCachedData<AnalyticsCacheData>(CACHE_KEY, {
+        trendData: trendsData,
+        prevWeekData: prevTrendsData,
+        focusWindows: windowsData,
+        distractions: distractionsData,
+      });
+      setLastUpdated('Just now');
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   // Use ONLY real data - no mock fallbacks
   const consistencyScore = trendData?.focusStats?.completion_rate ?? 0;
@@ -68,7 +100,7 @@ const Analytics: React.FC = () => {
 
   const avgDuration = trendData?.focusStats?.avg_duration ?? 0;
   const totalSessions = trendData?.focusStats?.total_sessions ?? 0;
-  const hasData = trendData?.weeklyTrends?.length > 0;
+  const hasData = (trendData?.weeklyTrends?.length ?? 0) > 0;
 
   // Calculate streak from weekly trends - count consecutive days with productive activity
   const streakDays = (() => {
@@ -112,13 +144,28 @@ const Analytics: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-600/20">
-          <BarChart3 className="w-6 h-6" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-600/20">
+            <BarChart3 className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-xl font-display font-bold text-slate-900 dark:text-white">Performance Analytics</h2>
+            <p className="text-sm text-slate-500">In-depth analysis of your focus and distraction patterns.</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-display font-bold text-slate-900 dark:text-white">Performance Analytics</h2>
-          <p className="text-sm text-slate-500">In-depth analysis of your focus and distraction patterns.</p>
+        <div className="flex items-center gap-3">
+          {lastUpdated && (
+            <span className="text-[10px] text-slate-400 font-medium">Updated {lastUpdated}</span>
+          )}
+          <button
+            onClick={() => fetchAnalytics(true)}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold shadow-sm hover:border-indigo-500/50 transition-all disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
         </div>
       </div>
 
@@ -256,9 +303,9 @@ const Analytics: React.FC = () => {
           <h3 className="font-display font-bold text-slate-900 dark:text-white mb-2">Consistency Score</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[200px]">
             {consistencyScore >= 80 ? 'Excellent consistency! Keep up the great work.' :
-             consistencyScore >= 50 ? 'Good consistency. Room to improve focus session completion.' :
-             consistencyScore > 0 ? 'Building habits. Try completing more focus sessions.' :
-             'Start focus sessions to build your consistency score.'}
+              consistencyScore >= 50 ? 'Good consistency. Room to improve focus session completion.' :
+                consistencyScore > 0 ? 'Building habits. Try completing more focus sessions.' :
+                  'Start focus sessions to build your consistency score.'}
           </p>
 
           <div className="mt-6 w-full pt-6 border-t border-slate-100 dark:border-slate-800">
@@ -415,9 +462,8 @@ const DayComparison: React.FC<{
     const isPositive = invertColors ? value < 0 : value > 0;
     const isNeutral = value === 0;
     return (
-      <span className={`inline-flex items-center gap-0.5 text-xs font-bold ${
-        isNeutral ? 'text-slate-400' : isPositive ? 'text-emerald-500' : 'text-rose-500'
-      }`}>
+      <span className={`inline-flex items-center gap-0.5 text-xs font-bold ${isNeutral ? 'text-slate-400' : isPositive ? 'text-emerald-500' : 'text-rose-500'
+        }`}>
         {isNeutral ? <Minus className="w-3 h-3" /> : isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
         {Math.abs(value)}%
       </span>
@@ -553,9 +599,8 @@ const DayComparison: React.FC<{
               This week: {Math.round(thisWeekTotal)}m vs Last week: {Math.round(prevWeekTotal)}m productive
             </p>
           </div>
-          <div className={`flex items-center gap-1 text-sm font-bold ${
-            weekChange >= 0 ? 'text-emerald-500' : 'text-rose-500'
-          }`}>
+          <div className={`flex items-center gap-1 text-sm font-bold ${weekChange >= 0 ? 'text-emerald-500' : 'text-rose-500'
+            }`}>
             {weekChange >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
             {weekChange >= 0 ? '+' : ''}{weekChange}%
           </div>

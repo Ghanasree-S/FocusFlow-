@@ -2,8 +2,9 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { insightsApi, wellnessApi } from '../services/api';
+import { getCachedData, setCachedData, isCacheFresh } from '../services/dataCache';
 import {
   Heart,
   Smile,
@@ -61,21 +62,50 @@ const MOOD_ICONS = [
 
 
 
+const WELLNESS_CACHE_KEY = 'wellness';
+
+interface WellnessCacheData {
+  moodHistory: MoodEntry[];
+  correlation: CorrelationData | null;
+  productivityData: any;
+}
+
 const Wellness: React.FC = () => {
+  const cached = getCachedData<WellnessCacheData>(WELLNESS_CACHE_KEY);
+
   const [todayMood, setTodayMood] = useState<MoodLevel | null>(null);
   const [todayEnergy, setTodayEnergy] = useState<MoodLevel>(3);
   const [todayStress, setTodayStress] = useState<MoodLevel>(3);
   const [sleepHours, setSleepHours] = useState(7);
   const [moodNote, setMoodNote] = useState('');
-  const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
-  const [correlation, setCorrelation] = useState<CorrelationData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [moodHistory, setMoodHistory] = useState<MoodEntry[]>(cached?.moodHistory ?? []);
+  const [correlation, setCorrelation] = useState<CorrelationData | null>(cached?.correlation ?? null);
+  const [isLoading, setIsLoading] = useState(!cached);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [productivityData, setProductivityData] = useState<any>(null);
+  const [productivityData, setProductivityData] = useState<any>(cached?.productivityData ?? null);
 
   useEffect(() => {
+    // Restore today's entry from cached history
+    if (cached?.moodHistory) {
+      const today = new Date().toISOString().split('T')[0];
+      const todayEntry = cached.moodHistory.find((e) => e.date === today);
+      if (todayEntry) {
+        setTodayMood(todayEntry.mood);
+        setTodayEnergy(todayEntry.energy);
+        setTodayStress(todayEntry.stress);
+        setSleepHours(todayEntry.sleep_hours);
+        setMoodNote(todayEntry.note || '');
+      }
+    }
+
     const fetchAll = async () => {
+      // Skip if cache is fresh
+      if (isCacheFresh(WELLNESS_CACHE_KEY) && cached) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const [historyRes, correlationRes, dashboardData] = await Promise.all([
           wellnessApi.getMoodHistory(14).catch(() => ({ entries: [] })),
@@ -86,6 +116,13 @@ const Wellness: React.FC = () => {
         setMoodHistory(historyRes.entries || []);
         setCorrelation(correlationRes);
         setProductivityData(dashboardData);
+
+        // Save to cache
+        setCachedData<WellnessCacheData>(WELLNESS_CACHE_KEY, {
+          moodHistory: historyRes.entries || [],
+          correlation: correlationRes,
+          productivityData: dashboardData,
+        });
 
         // Check if today's mood already logged
         const today = new Date().toISOString().split('T')[0];
@@ -196,11 +233,10 @@ const Wellness: React.FC = () => {
                   title={m.label}
                   aria-label={m.label}
                   onClick={() => setTodayMood(m.level as MoodLevel)}
-                  className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all flex-1 ${
-                    todayMood === m.level
+                  className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all flex-1 ${todayMood === m.level
                       ? `${m.bg} ring-2 ring-offset-1 ring-current ${m.color} scale-110`
                       : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-400'
-                  }`}
+                    }`}
                 >
                   <m.icon className="w-6 h-6" />
                   <span className="text-[9px] font-bold">{m.label}</span>
@@ -387,9 +423,8 @@ const Wellness: React.FC = () => {
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${entry.date}: ${moodInfo.label}`}>
                         <div
-                          className={`w-full rounded-t-lg transition-all ${
-                            entry.mood >= 4 ? 'bg-emerald-400' : entry.mood >= 3 ? 'bg-amber-400' : 'bg-rose-400'
-                          }`}
+                          className={`w-full rounded-t-lg transition-all ${entry.mood >= 4 ? 'bg-emerald-400' : entry.mood >= 3 ? 'bg-amber-400' : 'bg-rose-400'
+                            }`}
                           style={{ height: `${height}%` }}
                         ></div>
                         <span className="text-[8px] text-slate-400 -rotate-45">
