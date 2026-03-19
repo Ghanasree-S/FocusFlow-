@@ -22,7 +22,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 
-const CACHE_KEY = 'analytics';
+const CACHE_KEY = 'analytics_v2';
 
 interface AnalyticsCacheData {
   trendData: any;
@@ -218,7 +218,7 @@ const Analytics: React.FC = () => {
 
               {/* Real time series data from API */}
               {trendData?.weeklyTrends && trendData.weeklyTrends.length > 0 && (() => {
-                const data = trendData.weeklyTrends;
+                const data = [...trendData.weeklyTrends].reverse(); // Reverse so oldest is on the left, today on the right
                 const maxVal = Math.max(...data.map(d => Math.max(d.productive_minutes || 0, d.distracting_minutes || 0)), 1);
                 const width = 700;
                 const height = 180;
@@ -269,11 +269,11 @@ const Analytics: React.FC = () => {
               })()}
             </svg>
             <div className="flex justify-between mt-2 px-2">
-              {trendData?.weeklyTrends?.map((d, i) => (
+              {trendData?.weeklyTrends ? [...trendData.weeklyTrends].reverse().map((d, i) => (
                 <span key={i} className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                   {new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' })}
                 </span>
-              )) || days.map(day => (
+              )) : days.map(day => (
                 <span key={day} className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{day}</span>
               ))}
             </div>

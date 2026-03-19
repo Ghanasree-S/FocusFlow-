@@ -1,0 +1,12 @@
+Testing get_weekly_trends with user_id='694e43f6caf419b79fe5c93a' (string)
+
+  2026-03-05 prod=103 dist=105 total=262
+  2026-03-04 prod=218 dist=93 total=311
+  2026-03-03 prod=214 dist=72 total=310
+  2026-03-02 prod=203 dist=156 total=403
+  2026-03-01 prod=133 dist=115 total=270
+  2026-02-28 prod=200 dist=101 total=318
+  2026-02-27 prod=169 dist=160 total=351
+
+Total trends: 7
+Total data: 2225

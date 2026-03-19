@@ -33,7 +33,7 @@ interface DashboardData {
   totalMinutes?: number;
 }
 
-const DASHBOARD_CACHE_KEY = 'dashboard';
+const DASHBOARD_CACHE_KEY = 'dashboard_v2';
 
 interface DashboardCacheData {
   dashboardData: DashboardData;
