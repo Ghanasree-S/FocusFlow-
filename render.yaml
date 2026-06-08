@@ -22,7 +22,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGINS
-        value: https://chronosai.onrender.com,https://chronosai-frontend.onrender.com
+        value: https://chronosai-api.onrender.com,https://chronosai-frontend.onrender.com
       - key: DEBUG
         value: "false"
     healthCheckPath: /api/health
@@ -32,7 +32,7 @@ services:
     name: chronosai-frontend
     runtime: static
     rootDir: .
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build
     staticPublishPath: dist
     headers:
       - path: /*
