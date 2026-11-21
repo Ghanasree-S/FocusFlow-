@@ -13,6 +13,9 @@
 
 </div>
 
+> 🌐 **Live demo:** [chronosai-frontend.onrender.com](https://chronosai-frontend.onrender.com)
+> ⏳ Hosted on Render's free tier. The backend sleeps when idle, so **the first load can take ~1 minute**; after that it's fast.
+
 ---
 
 ## 📌 Overview
